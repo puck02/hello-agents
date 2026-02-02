@@ -73,18 +73,20 @@ class ReActAgent:
         return None
 
     def _parse_output(self, text: str):
-        thought_match = re.search(r"Thought: (.*)", text)
-        action_match = re.search(r"Action: (.*)", text)
+        # Thought: 匹配到 Action: 或文本末尾
+        thought_match = re.search(r"Thought:\s*(.*?)(?=\nAction:|$)", text, re.DOTALL)
+        # Action: 匹配到文本末尾
+        action_match = re.search(r"Action:\s*(.*?)$", text, re.DOTALL)
         thought = thought_match.group(1).strip() if thought_match else None
         action = action_match.group(1).strip() if action_match else None
         return thought, action
 
     def _parse_action(self, action_text: str):
-        match = re.match(r"(\w+)\[(.*)\]", action_text)
+        match = re.match(r"(\w+)\[(.*)\]", action_text, re.DOTALL)
         return (match.group(1), match.group(2)) if match else (None, None)
 
     def _parse_action_input(self, action_text: str):
-        match = re.match(r"\w+\[(.*)\]", action_text)
+        match = re.match(r"\w+\[(.*)\]", action_text, re.DOTALL)
         return match.group(1) if match else ""
 
 if __name__ == '__main__':

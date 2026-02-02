@@ -434,16 +434,20 @@ The LLM returns plain text, and we need to precisely extract `Thought` and `Acti
 ```python
 # (These methods are part of the ReActAgent class)
     def _parse_output(self, text: str):
-        """Parse LLM output to extract Thought and Action."""
-        thought_match = re.search(r"Thought: (.*)", text)
-        action_match = re.search(r"Action: (.*)", text)
+        """Parse LLM output to extract Thought and Action.
+        """
+        # Thought: match until Action: or end of text
+        thought_match = re.search(r"Thought:\s*(.*?)(?=\nAction:|$)", text, re.DOTALL)
+        # Action: match until end of text
+        action_match = re.search(r"Action:\s*(.*?)$", text, re.DOTALL)
         thought = thought_match.group(1).strip() if thought_match else None
         action = action_match.group(1).strip() if action_match else None
         return thought, action
 
     def _parse_action(self, action_text: str):
-        """Parse Action string to extract tool name and input."""
-        match = re.match(r"(\w+)\[(.*)\]", action_text)
+        """Parse Action string to extract tool name and input.
+        """
+        match = re.match(r"(\w+)\[(.*)\]", action_text, re.DOTALL)
         if match:
             return match.group(1), match.group(2)
         return None, None
