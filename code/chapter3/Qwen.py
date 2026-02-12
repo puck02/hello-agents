@@ -12,7 +12,7 @@ model_id = "Qwen/Qwen1.5-0.5B-Chat"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
-# 加载分词器
+# 加载分词器，从model_id指定的预训练模型中加载词表（分好了词）
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 # 加载模型，并将其移动到指定设备
