@@ -2,9 +2,12 @@ from dotenv import load_dotenv
 # 加载 .env 文件中的环境变量
 load_dotenv()
 
+import ast
+import operator
 import os
+
 from serpapi import SerpApiClient
-from typing import Dict, Any
+from typing import Any, Dict
 
 def search(query: str) -> str:
     """
@@ -47,8 +50,55 @@ def search(query: str) -> str:
 
     except Exception as e:
         return f"搜索时发生错误: {e}"
-    
-from typing import Dict, Any
+
+
+SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.Mod: operator.mod,
+    ast.FloorDiv: operator.floordiv,
+}
+
+
+def _evaluate_node(node: ast.AST) -> float:
+    if isinstance(node, ast.Expression):
+        return _evaluate_node(node.body)
+    if isinstance(node, ast.BinOp):
+        left = _evaluate_node(node.left)
+        right = _evaluate_node(node.right)
+        operator_func = SAFE_OPERATORS.get(type(node.op))
+        if not operator_func:
+            raise ValueError(f"不支持的操作符: {type(node.op).__name__}")
+        return operator_func(left, right)
+    if isinstance(node, ast.UnaryOp):
+        operand = _evaluate_node(node.operand)
+        if isinstance(node.op, ast.UAdd):
+            return +operand
+        if isinstance(node.op, ast.USub):
+            return -operand
+        raise ValueError(f"不支持的单目操作符: {type(node.op).__name__}")
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, (int, float)):
+            return node.value
+        raise ValueError("表达式中包含非数字字面量")
+    raise ValueError(f"不支持的表达式节点: {type(node).__name__}")
+
+
+def calculator(expression: str) -> str:
+    """安全地计算简单数学表达式，支持加减乘除、幂运算和取模。"""
+    expression = expression.strip()
+    if not expression:
+        return "错误：表达式不能为空。"
+
+    try:
+        parsed = ast.parse(expression, mode='eval')
+        result = _evaluate_node(parsed)
+        return str(result)
+    except Exception as exc:
+        return f"计算错误：{exc}"
 
 class ToolExecutor:
     """
@@ -91,6 +141,8 @@ if __name__ == '__main__':
     # 2. 注册我们的实战搜索工具
     search_description = "一个网页搜索引擎。当你需要回答关于时事、事实以及在你的知识库中找不到的信息时，应使用此工具。"
     toolExecutor.registerTool("Search", search_description, search)
+    calculator_description = "一个安全的计算器工具，用于处理复杂的数学表达式，例如带括号、乘除和幂运算。"
+    toolExecutor.registerTool("Calculator", calculator_description, calculator)
     
     # 3. 打印可用的工具
     print("\n--- 可用的工具 ---")
