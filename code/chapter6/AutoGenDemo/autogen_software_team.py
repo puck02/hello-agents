@@ -4,7 +4,6 @@ AutoGen 软件开发团队协作案例
 
 import os
 import asyncio
-from typing import List, Dict, Any
 from dotenv import load_dotenv
 
 # 加载环境变量
@@ -12,7 +11,7 @@ load_dotenv()
 
 # 先测试一个版本，使用 OpenAI 客户端
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
+from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import TextMentionTermination
 from autogen_agentchat.ui import Console
@@ -29,6 +28,15 @@ def create_product_manager(model_client):
     """创建产品经理智能体"""
     system_message = """你是一位经验丰富的产品经理，专门负责软件产品的需求分析和项目规划。
 
+【协作协议】
+你只在以下两种情况输出有效内容：
+1) 首轮（还没有任何 NEXT:/DECISION:/QA: 控制标记）
+2) 最近三条消息中任意一条包含 DECISION:BACK_TO_PM
+
+如果不满足以上条件，只回复：SKIP
+
+你的输出必须在最后一行追加：NEXT:TO_ENGINEER
+
 你的核心职责包括：
 1. **需求分析**：深入理解用户需求，识别核心功能和边界条件
 2. **技术规划**：基于需求制定清晰的技术实现路径
@@ -42,7 +50,7 @@ def create_product_manager(model_client):
 4. 实现优先级排序
 5. 验收标准定义
 
-请简洁明了地回应，并在分析完成后说"请工程师开始实现"。"""
+请简洁明了地回应。"""
 
     return AssistantAgent(
         name="ProductManager",
@@ -54,6 +62,16 @@ def create_engineer(model_client):
     """创建软件工程师智能体"""
     system_message = """你是一位资深的软件工程师，擅长 Python 开发和 Web 应用构建。
 
+【协作协议】
+你只在最近三条消息中任意一条包含以下任一标记时输出有效内容：
+- NEXT:TO_ENGINEER
+- DECISION:BACK_TO_ENGINEER
+- QA:FAILED
+
+如果不满足条件，只回复：SKIP
+
+完成代码后，最后一行必须追加：NEXT:TO_REVIEW
+
 你的技术专长包括：
 1. **Python 编程**：熟练掌握 Python 语法和最佳实践
 2. **Web 开发**：精通 Streamlit、Flask、Django 等框架
@@ -64,10 +82,10 @@ def create_engineer(model_client):
 1. 仔细分析技术需求
 2. 选择合适的技术方案
 3. 编写完整的代码实现
-4. 添加必要的注释和说明
+4. 提供关键实现说明（简洁）
 5. 考虑边界情况和异常处理
 
-请提供完整的可运行代码，并在完成后说"请代码审查员检查"。"""
+请提供完整的可运行代码。"""
 
     return AssistantAgent(
         name="Engineer",
@@ -78,6 +96,15 @@ def create_engineer(model_client):
 def create_code_reviewer(model_client):
     """创建代码审查员智能体"""
     system_message = """你是一位经验丰富的代码审查专家，专注于代码质量和最佳实践。
+
+【协作协议】
+你只在最近三条消息中任意一条包含 NEXT:TO_REVIEW 时输出有效内容。
+如果不满足条件，只回复：SKIP
+
+你必须在审查结尾给出一个且仅一个决策标记：
+- DECISION:BACK_TO_PM      （需求理解有偏差，需要回退到产品经理）
+- DECISION:BACK_TO_ENGINEER（需求没问题，但代码需修复）
+- DECISION:TO_QA           （代码可进入测试）
 
 你的审查重点包括：
 1. **代码质量**：检查代码的可读性、可维护性和性能
@@ -92,7 +119,7 @@ def create_code_reviewer(model_client):
 4. 提供具体的修改建议
 5. 评估代码的整体质量
 
-请提供具体的审查意见，完成后说"代码审查完成，请用户代理测试"。"""
+请提供具体、可执行的审查意见。"""
 
     return AssistantAgent(
         name="CodeReviewer",
@@ -100,17 +127,28 @@ def create_code_reviewer(model_client):
         system_message=system_message,
     )
 
-def create_user_proxy():
-    """创建用户代理智能体"""
-    return UserProxyAgent(
-        name="UserProxy",
-        description="""用户代理，负责以下职责：
-1. 代表用户提出开发需求
-2. 执行最终的代码实现
-3. 验证功能是否符合预期
-4. 提供用户反馈和建议
+def create_quality_assurance(model_client):
+    """创建测试工程师（QA）智能体"""
+    system_message = """你是一位测试工程师（Quality Assurance），负责在代码审查通过后执行测试验证。
 
-完成测试后请回复 TERMINATE。""",
+【协作协议】
+你只在最近三条消息中任意一条包含 DECISION:TO_QA 时输出有效内容。
+如果不满足条件，只回复：SKIP
+
+测试步骤（轻量化）：
+1. 生成功能测试清单（核心功能、异常处理、边界情况）
+2. 说明可执行的测试方法（手动/自动）
+3. 给出测试结论
+
+结论标记（二选一，且必须在最后一行输出）：
+- QA:FAILED  （测试未通过，回退工程师修复）
+- QA:PASSED TERMINATE （测试通过，终止流程）
+"""
+
+    return AssistantAgent(
+        name="QualityAssurance",
+        model_client=model_client,
+        system_message=system_message,
     )
 
 async def run_software_development_team():
@@ -127,7 +165,7 @@ async def run_software_development_team():
     product_manager = create_product_manager(model_client)
     engineer = create_engineer(model_client)
     code_reviewer = create_code_reviewer(model_client)
-    user_proxy = create_user_proxy()
+    quality_assurance = create_quality_assurance(model_client)
     
     # 添加终止条件
     termination = TextMentionTermination("TERMINATE")
@@ -136,12 +174,12 @@ async def run_software_development_team():
     team_chat = RoundRobinGroupChat(
         participants=[
             product_manager,
-            engineer, 
+            engineer,
             code_reviewer,
-            user_proxy
+            quality_assurance,
         ],
         termination_condition=termination,
-        max_turns=20,  # 增加最大轮次
+        max_turns=24,
     )
     
     # 定义开发任务
@@ -157,7 +195,12 @@ async def run_software_development_team():
 - 界面简洁美观，用户友好
 - 添加适当的错误处理和加载状态
 
-请团队协作完成这个任务，从需求分析到最终实现。"""
+请团队协作完成这个任务，从需求分析到最终实现。
+
+协作要求（必须遵守）：
+- 按照控制标记推进：NEXT:/DECISION:/QA:
+- 如需回退，严格使用 DECISION:BACK_TO_PM 或 DECISION:BACK_TO_ENGINEER
+- 只在满足本角色触发条件时输出实质内容，否则回复 SKIP"""
     
     # 执行团队协作
     print("🚀 启动 AutoGen 软件开发团队协作...")
@@ -178,7 +221,7 @@ if __name__ == "__main__":
         result = asyncio.run(run_software_development_team())
         
         print(f"\n📋 协作结果摘要：")
-        print(f"- 参与智能体数量：4个")
+        print(f"- 参与智能体数量：4个（含QA）")
         print(f"- 任务完成状态：{'成功' if result else '需要进一步处理'}")
         
     except ValueError as e:

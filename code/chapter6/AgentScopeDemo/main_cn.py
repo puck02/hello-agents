@@ -6,7 +6,16 @@
 import asyncio
 import os
 import random
+import logging
+import warnings
 from typing import List, Dict, Optional
+
+# 配置日志级别，只显示WARNING及以上级别的日志
+logging.basicConfig(level=logging.WARNING)
+# 禁用AgentScope的详细日志
+logging.getLogger("agentscope").setLevel(logging.WARNING)
+# 忽略弃用警告
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from agentscope.agent import ReActAgent
 from agentscope.model import DashScopeChatModel
@@ -63,7 +72,7 @@ class ThreeKingdomsWerewolfGame:
             model=DashScopeChatModel(
                 model_name="qwen-max",
                 api_key=os.environ["DASHSCOPE_API_KEY"],
-                enable_thinking=True,
+                enable_thinking=False,
             ),
             formatter=DashScopeMultiAgentFormatter(),
         )
@@ -119,6 +128,7 @@ class ThreeKingdomsWerewolfGame:
         if not self.werewolves:
             return None
             
+        print("\n【狼人阶段】")
         await self.moderator.announce(f"🐺 狼人请睁眼，选择今晚要击杀的目标...")
         
         # 狼人讨论
@@ -132,13 +142,21 @@ class ThreeKingdomsWerewolfGame:
             # 讨论阶段
             for _ in range(MAX_DISCUSSION_ROUND):
                 for wolf in self.werewolves:
-                    await wolf(structured_model=DiscussionModelCN)
+                    response = await wolf(structured_model=DiscussionModelCN)
+                    # 提取并打印对话内容
+                    if response and hasattr(response, 'content'):
+                        if isinstance(response.content, dict) and 'key_evidence' in response.content:
+                            print(f"{wolf.name}: {response.content['key_evidence']}")
+                        elif isinstance(response.content, str):
+                            print(f"{wolf.name}: {response.content}")
             
             # 投票击杀
+            print("")  # 空行
+            await self.moderator.announce("请选择击杀目标")
             werewolves_hub.set_auto_broadcast(False)
             kill_votes = await fanout_pipeline(
                 self.werewolves,
-                msg=await self.moderator.announce("请选择击杀目标"),
+                msg=None,
                 structured_model=WerewolfKillModelCN,
                 enable_gather=False,
             )
@@ -148,7 +166,9 @@ class ThreeKingdomsWerewolfGame:
             for i, vote_msg in enumerate(kill_votes):
                 # 检查vote_msg是否为None或metadata是否存在
                 if vote_msg is not None and hasattr(vote_msg, 'metadata') and vote_msg.metadata is not None:
-                    votes[self.werewolves[i].name] = vote_msg.metadata.get("target")
+                    target = vote_msg.metadata.get("target")
+                    votes[self.werewolves[i].name] = target
+                    print(f"{self.werewolves[i].name} 选择击杀 {target}")
                 else:
                     # 如果返回无效,随机选择一个目标
                     print(f"⚠️ {self.werewolves[i].name} 的击杀投票无效,随机选择目标")
@@ -163,7 +183,8 @@ class ThreeKingdomsWerewolfGame:
         """预言家阶段"""
         if not self.seer:
             return
-            
+        
+        print("\n【预言家阶段】")
         seer_agent = self.seer[0]
         await self.moderator.announce("🔮 预言家请睁眼，选择要查验的玩家...")
         
@@ -185,13 +206,15 @@ class ThreeKingdomsWerewolfGame:
         
         # 告知预言家结果
         result_msg = f"查验结果：{target_name}是{'狼人' if target_role == '狼人' else '好人'}"
+        print(f"{seer_agent.name} 查验了 {target_name}")
         await seer_agent.observe(await self.moderator.announce(result_msg))
     
     async def witch_phase(self, killed_player: str):
         """女巫阶段"""
         if not self.witch:
             return killed_player, None
-            
+        
+        print("\n【女巫阶段】")
         witch_agent = self.witch[0]
         await self.moderator.announce("🧙‍♀️ 女巫请睁眼...")
         
@@ -213,12 +236,14 @@ class ThreeKingdomsWerewolfGame:
                 if killed_player:
                     saved_player = killed_player
                     self.witch_has_antidote = False
+                    print(f"{witch_agent.name} 使用解药救了 {killed_player}")
                     await witch_agent.observe(await self.moderator.announce(f"你使用解药救了{killed_player}"))
 
             if witch_action.metadata.get("use_poison") and self.witch_has_poison:
                 poisoned_player = witch_action.metadata.get("target_name")
                 if poisoned_player:
                     self.witch_has_poison = False
+                    print(f"{witch_agent.name} 使用毒药毒杀了 {poisoned_player}")
                     await witch_agent.observe(await self.moderator.announce(f"你使用毒药毒杀了{poisoned_player}"))
         
         # 确定最终死亡玩家
@@ -233,6 +258,7 @@ class ThreeKingdomsWerewolfGame:
             
         hunter_agent = self.hunter[0]
         if hunter_agent.name == shot_by_hunter:
+            print("\n【猎人技能】")
             await self.moderator.announce("🏹 猎人发动技能，可以带走一名玩家...")
             
             hunter_action = await hunter_agent(
@@ -247,6 +273,7 @@ class ThreeKingdomsWerewolfGame:
             if hunter_action.metadata.get("shoot"):
                 target = hunter_action.metadata.get("target")
                 if target:
+                    print(f"{hunter_agent.name} 开枪带走了 {target}")
                     await self.moderator.announce(f"猎人{hunter_agent.name}开枪带走了{target}")
                     return target
                 else:
@@ -270,6 +297,7 @@ class ThreeKingdomsWerewolfGame:
     
     async def day_phase(self, round_num: int):
         """白天阶段"""
+        print("\n【白天讨论阶段】")
         await self.moderator.day_announcement(round_num)
         
         # 讨论阶段
@@ -281,13 +309,23 @@ class ThreeKingdomsWerewolfGame:
             ),
         ) as all_hub:
             # 每人发言一轮
-            await sequential_pipeline(self.alive_players)
+            for player in self.alive_players:
+                response = await player(structured_model=DiscussionModelCN)
+                # 提取并打印对话内容
+                if response and hasattr(response, 'content'):
+                    if isinstance(response.content, dict) and 'key_evidence' in response.content:
+                        print(f"{player.name}: {response.content['key_evidence']}")
+                    elif isinstance(response.content, str):
+                        print(f"{player.name}: {response.content}")
             
             # 投票阶段
+            print("\n【投票阶段】")
             all_hub.set_auto_broadcast(False)
+            await self.moderator.announce("请投票选择要淘汰的玩家")
+            
             vote_msgs = await fanout_pipeline(
                 self.alive_players,
-                await self.moderator.announce("请投票选择要淘汰的玩家"),
+                msg=None,  # 不需要重复发送消息
                 structured_model=get_vote_model_cn(self.alive_players),
                 enable_gather=False,
             )
@@ -297,7 +335,10 @@ class ThreeKingdomsWerewolfGame:
             for i, vote_msg in enumerate(vote_msgs):
                 # 检查vote_msg是否为None或metadata是否存在
                 if vote_msg is not None and hasattr(vote_msg, 'metadata') and vote_msg.metadata is not None:
-                    votes[self.alive_players[i].name] = vote_msg.metadata.get("vote")
+                    target = vote_msg.metadata.get("vote")
+                    votes[self.alive_players[i].name] = target
+                    reason = vote_msg.metadata.get("reason", "未说明")
+                    print(f"{self.alive_players[i].name} 投票给 {target}（理由：{reason}）")
                 else:
                     # 如果返回无效,默认弃票
                     print(f"⚠️ {self.alive_players[i].name} 的投票无效,视为弃票")
@@ -311,10 +352,13 @@ class ThreeKingdomsWerewolfGame:
     async def run_game(self):
         """运行游戏主循环"""
         try:
+            print("\n=== 游戏初始化 ===")
             await self.setup_game()
             
             for round_num in range(1, MAX_GAME_ROUND + 1):
-                print(f"\n🌙 === 第{round_num}轮游戏开始 ===")
+                print(f"\n{'='*60}")
+                print(f"🌙 === 第{round_num}轮游戏 ===")
+                print(f"{'='*60}")
                 
                 # 夜晚阶段
                 await self.moderator.night_announcement(round_num)
@@ -333,6 +377,7 @@ class ThreeKingdomsWerewolfGame:
                 self.update_alive_players(night_deaths)
                 
                 # 死亡公告
+                print("")  # 空行
                 await self.moderator.death_announcement(night_deaths)
                 
                 # 检查胜利条件
@@ -354,10 +399,12 @@ class ThreeKingdomsWerewolfGame:
                 # 检查胜利条件
                 winner = check_winning_cn(self.alive_players, self.roles)
                 if winner:
+                    print(f"\n{'='*60}")
                     await self.moderator.game_over_announcement(winner)
+                    print(f"{'='*60}")
                     return
                 
-                print(f"第{round_num}轮结束，存活玩家：{format_player_list(self.alive_players)}")
+                print(f"\n✅ 第{round_num}轮结束，当前存活玩家：{format_player_list(self.alive_players)}\n")
         
         except Exception as e:
             print(f"❌ 游戏运行出错：{e}")

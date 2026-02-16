@@ -9,8 +9,8 @@ from agentscope.agent import AgentBase
 from agentscope.message import Msg
 
 # 游戏常量
-MAX_GAME_ROUND = 10
-MAX_DISCUSSION_ROUND = 3
+MAX_GAME_ROUND = 5  # 减少到5轮，避免token累积过多
+MAX_DISCUSSION_ROUND = 2  # 每轮只讨论2次
 CHINESE_NAMES = [
     "刘备", "关羽", "张飞", "诸葛亮", "赵云",
     "曹操", "司马懿", "典韦", "许褚", "夏侯惇", 
@@ -106,11 +106,12 @@ class GameModerator(AgentBase):
         """发布游戏公告"""
         msg = Msg(
             name=self.name,
-            content=f"📢 {content}",
+            content=content,
             role="system"
         )
         self.game_log.append(content)
-        await self.print(msg)
+        # 使用简洁的打印格式，不使用框架的 print
+        print(f"游戏主持人: 📢 {content}")
         return msg
     
     async def night_announcement(self, round_num: int) -> Msg:

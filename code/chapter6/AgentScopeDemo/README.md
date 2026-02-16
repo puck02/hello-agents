@@ -37,6 +37,8 @@ pip install pydantic
 # Linux/Mac
 export DASHSCOPE_API_KEY="your-api-key-here"
 
+export DASHSCOPE_API_KEY=sk-4903eef9ed6a48588352f2187c0556b2
+
 # Windows PowerShell
 $env:DASHSCOPE_API_KEY="your-api-key-here"
 
