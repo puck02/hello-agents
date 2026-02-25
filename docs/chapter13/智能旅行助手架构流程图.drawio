@@ -1,0 +1,212 @@
+<mxfile host="65bd71144e">
+    <diagram id="trip-planner-arch" name="智能旅行助手架构流程图">
+        <mxGraphModel dx="1166" dy="615" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1300" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="智能旅行助手 — 前后端完整架构流程图" style="text;html=1;align=center;fontStyle=1;fontSize=18;fillColor=none;strokeColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="10" width="800" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="schema_sw" value="📐 数据模型约定" style="swimlane;startSize=28;fillColor=#e0f7fa;strokeColor=#006064;fontStyle=1;fontSize=11;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="440" width="155" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="schema_note" value="后端 schemas.py 与&#xa;前端 types/index.ts&#xa;字段完全一致，&#xa;确保 JSON 不丢字段" style="text;html=1;align=center;fontSize=10;fillColor=none;strokeColor=none;fontStyle=2;" parent="schema_sw" vertex="1">
+                    <mxGeometry x="5" y="28" width="145" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="s1" value="TripRequest（请求体）&#xa;· city: str&#xa;· start_date: str&#xa;· end_date: str&#xa;· travel_days: int&#xa;· preferences: List[str]" style="rounded=1;fillColor=#ffffff;strokeColor=#006064;fontSize=10;align=left;" parent="schema_sw" vertex="1">
+                    <mxGeometry x="8" y="90" width="139" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="s2" value="TripPlanResponse（响应体）&#xa;· success: bool&#xa;· data: TripPlan" style="rounded=1;fillColor=#ffffff;strokeColor=#006064;fontSize=10;align=left;" parent="schema_sw" vertex="1">
+                    <mxGeometry x="8" y="182" width="139" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="s3" value="TripPlan（核心数据）&#xa;· city, days[ ]&#xa;· weather_info[ ]&#xa;· budget" style="rounded=1;fillColor=#ffffff;strokeColor=#006064;fontSize=10;align=left;" parent="schema_sw" vertex="1">
+                    <mxGeometry x="8" y="248" width="139" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="user_sw" value="👤 用户浏览器" style="swimlane;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="60" width="940" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="u1" value="① 打开&#xa;http://localhost:5173" style="rounded=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=11;" parent="user_sw" vertex="1">
+                    <mxGeometry x="10" y="35" width="170" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="u2" value="② 填写表单&#xa;城市 / 日期 / 偏好 / 预算" style="rounded=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=11;" parent="user_sw" vertex="1">
+                    <mxGeometry x="200" y="35" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="u3" value="③ 点击「开始规划」" style="rounded=1;fillColor=#008a00;fontColor=#ffffff;strokeColor=#005700;fontSize=11;fontStyle=1;" parent="user_sw" vertex="1">
+                    <mxGeometry x="410" y="35" width="170" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="u4" value="⑩ 查看结果页 Result.vue&#xa;地图 / 行程详情 / 预算明细" style="rounded=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=11;" parent="user_sw" vertex="1">
+                    <mxGeometry x="700" y="35" width="220" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_u1u2" style="edgeStyle=orthogonalEdgeStyle;" parent="user_sw" source="u1" target="u2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_u2u3" style="edgeStyle=orthogonalEdgeStyle;" parent="user_sw" source="u2" target="u3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="vite_box" value="📦 Vite 开发服务器 :5173&#xa;&#xa;仅在「启动阶段」参与一次：&#xa;将 HTML + JS + CSS 文件发给浏览器&#xa;之后退出，不再参与任何请求" style="rounded=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=2;dashed=1;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="1175" y="60" width="260" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_u1_vite" value="GET http://localhost:5173" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#9673a6;" parent="1" source="u1" target="vite_box" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_vite_fe" value="返回 HTML + JS 文件（仅一次）" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#9673a6;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" parent="1" source="vite_box" target="fe_sw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe_sw" value="🖥️ 前端代码（JS 下载后运行在用户浏览器内存中）" style="swimlane;startSize=28;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="210" width="940" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe1" value="Home.vue&#xa;handleSubmit()" style="rounded=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;" parent="fe_sw" vertex="1">
+                    <mxGeometry x="10" y="45" width="140" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe2" value="api.ts&#xa;generateTripPlan(formData)" style="rounded=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;" parent="fe_sw" vertex="1">
+                    <mxGeometry x="165" y="45" width="165" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe3" value="Axios apiClient.post()&#xa;URL: /api/trip/plan&#xa;Body: TripRequest JSON&#xa;Content-Type: application/json&#xa;timeout: 120000ms（2分钟）" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;" parent="fe_sw" vertex="1">
+                    <mxGeometry x="345" y="35" width="215" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe4" value="请求拦截器&#xa;console.log(&#39;发送请求:&#39;, config)" style="rounded=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" parent="fe_sw" vertex="1">
+                    <mxGeometry x="345" y="135" width="215" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe5" value="响应拦截器&#xa;console.log(&#39;收到响应:&#39;, response)" style="rounded=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" parent="fe_sw" vertex="1">
+                    <mxGeometry x="575" y="135" width="215" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="fe6" value="Result.vue&#xa;渲染地图 / 逐日行程 / 预算" style="rounded=1;fillColor=#ffffff;strokeColor=#82b366;fontSize=11;" parent="fe_sw" vertex="1">
+                    <mxGeometry x="740" y="45" width="185" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_fe1fe2" style="edgeStyle=orthogonalEdgeStyle;" parent="fe_sw" source="fe1" target="fe2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_fe2fe3" style="edgeStyle=orthogonalEdgeStyle;" parent="fe_sw" source="fe2" target="fe3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_fe3fe4" style="edgeStyle=orthogonalEdgeStyle;" parent="fe_sw" source="fe3" target="fe4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_fe5fe6" style="edgeStyle=orthogonalEdgeStyle;" parent="fe_sw" source="fe5" target="fe6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_u3_fe1" value="④ 触发 handleSubmit()" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="u3" target="fe1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="705" y="170"/>
+                            <mxPoint x="290" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="be_sw" value="⚙️ FastAPI 后端（运行在服务器，端口 :8000）" style="swimlane;startSize=28;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=12;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="480" width="940" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="be0" value="main.py&#xa;uvicorn app.api.main:app&#xa;启动 FastAPI 应用" style="rounded=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=11;" parent="be_sw" vertex="1">
+                    <mxGeometry x="10" y="45" width="165" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="be1" value="CORSMiddleware（跨域配置）&#xa;allow_origins:&#xa;  localhost:5173&#xa;  localhost:3000&#xa;  127.0.0.1:5173&#xa;allow_methods: [*]&#xa;allow_headers: [*]" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;" parent="be_sw" vertex="1">
+                    <mxGeometry x="190" y="35" width="195" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="be2" value="路由注册&#xa;app.include_router(&#xa;  trip.router, prefix=&#39;/api&#39;)&#xa;app.include_router(&#xa;  poi.router, prefix=&#39;/api&#39;)&#xa;app.include_router(&#xa;  map.router, prefix=&#39;/api&#39;)" style="rounded=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=11;align=left;" parent="be_sw" vertex="1">
+                    <mxGeometry x="400" y="35" width="210" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="be3" value="trip.py 路由处理&#xa;@router.post(&#39;/plan&#39;)&#xa;async def plan_trip(request: TripRequest)&#xa;&#xa;Pydantic 自动验证：&#xa;· 字段类型校验&#xa;· 必填字段检查&#xa;· 范围约束（如 travel_days ≥ 1）" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;" parent="be_sw" vertex="1">
+                    <mxGeometry x="625" y="35" width="300" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="be4" value="unsplash_service.py（可选）&#xa;遍历景点，调用 Unsplash API 补充图片 URL" style="rounded=1;fillColor=#ffffff;strokeColor=#d79b00;fontSize=11;dashed=1;" parent="be_sw" vertex="1">
+                    <mxGeometry x="190" y="170" width="450" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_be0be1" style="edgeStyle=orthogonalEdgeStyle;" parent="be_sw" source="be0" target="be1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_be1be2" style="edgeStyle=orthogonalEdgeStyle;" parent="be_sw" source="be1" target="be2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_be2be3" style="edgeStyle=orthogonalEdgeStyle;" parent="be_sw" source="be2" target="be3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_fe4_be1" value="⑤ 跨域请求&#xa;浏览器先发 OPTIONS 预检&#xa;CORS 检查通过后&#xa;正式发 POST /api/trip/plan" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;strokeColor=#d79b00;strokeWidth=2;" parent="1" source="fe4" target="be1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_s1_be1" value="定义请求格式" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;strokeColor=#006064;exitX=1;exitY=0.3;entryX=0;entryY=0.3;" parent="1" source="s1" target="be1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_s2_fe5" value="定义响应格式" style="edgeStyle=orthogonalEdgeStyle;fontSize=9;dashed=1;strokeColor=#006064;exitX=1;exitY=0.7;entryX=0;entryY=0.5;" parent="1" source="s2" target="fe5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag_sw" value="🤖 多智能体系统（backend/app/agents/trip_planner_agent.py）" style="swimlane;startSize=28;fillColor=#fce4ec;strokeColor=#c62828;fontStyle=1;fontSize=12;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="800" width="940" height="280" as="geometry">
+                        <mxRectangle x="210" y="800" width="380" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ag0" value="MultiAgentTripPlanner.__init__()&#xa;&#xa;创建共享 MCPTool:&#xa;  name=&#39;amap&#39;&#xa;  server_command: uvx amap-mcp-server&#xa;  env: AMAP_MAPS_API_KEY=...&#xa;  auto_expand=True&#xa;（一个工具自动展开为 16 个）" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;" parent="ag_sw" vertex="1">
+                    <mxGeometry x="10" y="45" width="215" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag1" value="① AttractionSearchAgent&#xa;景点搜索专家&#xa;add_tool(amap_tool)&#xa;&#xa;工具调用：&#xa;[TOOL_CALL:&#xa;amap_maps_text_search&#xa;keywords=历史文化&#xa;city=北京]" style="rounded=1;fillColor=#ffffff;strokeColor=#c62828;fontSize=11;align=left;" parent="ag_sw" vertex="1">
+                    <mxGeometry x="240" y="45" width="155" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag2" value="② WeatherQueryAgent&#xa;天气查询专家&#xa;add_tool(amap_tool)&#xa;&#xa;工具调用：&#xa;[TOOL_CALL:&#xa;amap_maps_weather&#xa;city=北京]" style="rounded=1;fillColor=#ffffff;strokeColor=#c62828;fontSize=11;align=left;" parent="ag_sw" vertex="1">
+                    <mxGeometry x="410" y="45" width="155" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag3" value="③ HotelAgent&#xa;酒店推荐专家&#xa;add_tool(amap_tool)&#xa;&#xa;工具调用：&#xa;[TOOL_CALL:&#xa;amap_maps_text_search&#xa;keywords=酒店&#xa;city=北京]" style="rounded=1;fillColor=#ffffff;strokeColor=#c62828;fontSize=11;align=left;" parent="ag_sw" vertex="1">
+                    <mxGeometry x="580" y="45" width="155" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag4" value="④ PlannerAgent&#xa;行程规划专家&#xa;（无工具，只调 LLM）&#xa;&#xa;整合：景点信息&#xa;    +天气信息&#xa;    +酒店信息&#xa;→ 输出完整行程 JSON" style="rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;" parent="ag_sw" vertex="1">
+                    <mxGeometry x="750" y="45" width="178" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="ag5" value="_parse_response(): 从 LLM 输出中提取 JSON → 构建 TripPlan 对象（Pydantic 验证所有字段）" style="rounded=1;fillColor=#ffffff;strokeColor=#c62828;fontSize=11;" parent="ag_sw" vertex="1">
+                    <mxGeometry x="240" y="215" width="688" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag0ag1" style="edgeStyle=orthogonalEdgeStyle;" parent="ag_sw" source="ag0" target="ag1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag1ag2" style="edgeStyle=orthogonalEdgeStyle;" parent="ag_sw" source="ag1" target="ag2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag2ag3" style="edgeStyle=orthogonalEdgeStyle;" parent="ag_sw" source="ag2" target="ag3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag3ag4" style="edgeStyle=orthogonalEdgeStyle;" parent="ag_sw" source="ag3" target="ag4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag4ag5" style="edgeStyle=orthogonalEdgeStyle;" parent="ag_sw" source="ag4" target="ag5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_be3_ag" value="⑥ agent.plan_trip(request)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;strokeWidth=2;strokeColor=#c62828;" parent="1" source="be3" target="ag_sw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag5_be3" value="⑦ 返回 TripPlan 对象" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;strokeColor=#c62828;exitX=0;exitY=0.5;entryX=0.8;entryY=1;" parent="1" source="ag5" target="be3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_be3_fe5" value="⑧ 返回 HTTP 200&#xa;TripPlanResponse JSON&#xa;{ success: true, data: TripPlan }" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;strokeColor=#82b366;strokeWidth=2;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" parent="1" source="be3" target="fe5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_fe6_u4" value="⑩ 渲染结果" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="fe6" target="u4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext_sw" value="🌐 外部服务" style="swimlane;startSize=28;fillColor=#d5e8d4;strokeColor=#227716;fontStyle=1;fontSize=12;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="1175" y="800" width="270" height="280" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext1" value="高德地图 MCP Server&#xa;uvx amap-mcp-server&#xa;&#xa;提供工具：&#xa;· amap_maps_text_search&#xa;· amap_maps_weather&#xa;· 共 16 个工具" style="rounded=1;fillColor=#ffffff;strokeColor=#227716;fontSize=11;align=left;" parent="ext_sw" vertex="1">
+                    <mxGeometry x="8" y="40" width="254" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="ext2" value="LLM API（OpenAI / DeepSeek）&#xa;&#xa;接收：景点+天气+酒店信息&#xa;返回：完整行程 JSON&#xa;（由 PlannerAgent 调用）" style="rounded=1;fillColor=#ffffff;strokeColor=#227716;fontSize=11;align=left;" parent="ext_sw" vertex="1">
+                    <mxGeometry x="8" y="152" width="254" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag1_ext1" value="搜索景点" style="fontSize=9;strokeColor=#227716;exitX=1;exitY=0.3;entryX=0;entryY=0.3;" parent="1" source="ag1" target="ext1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag2_ext1" value="查询天气" style="fontSize=9;strokeColor=#227716;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" parent="1" source="ag2" target="ext1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag3_ext1" value="搜索酒店" style="fontSize=9;strokeColor=#227716;exitX=1;exitY=0.7;entryX=0;entryY=0.7;" parent="1" source="ag3" target="ext1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_ag4_ext2" value="⑨ 生成行程 JSON" style="fontSize=9;strokeColor=#d6b656;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.3;" parent="1" source="ag4" target="ext2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="unsplash_box" value="Unsplash API（可选）&#xa;为景点补充图片 URL&#xa;由 unsplash_service.py 调用" style="rounded=1;fillColor=#f3e5f5;strokeColor=#9673a6;fontSize=11;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1175" y="590" width="270" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_be4_uns" value="补充配图（可选）" style="fontSize=9;dashed=1;strokeColor=#9673a6;" parent="1" source="be4" target="unsplash_box" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

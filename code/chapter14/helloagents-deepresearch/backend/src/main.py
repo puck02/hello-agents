@@ -4,7 +4,14 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 from typing import Any, Dict, Iterator, Optional
+
+from dotenv import load_dotenv
+
+# 加载 .env 文件，必须在所有其他 import 之前执行，
+# 否则 SearchTool 等模块级对象在 import 时读不到环境变量
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

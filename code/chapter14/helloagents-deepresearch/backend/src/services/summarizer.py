@@ -11,7 +11,7 @@ from models import SummaryState, TodoItem
 from config import Configuration
 from utils import strip_thinking_tokens
 from services.notes import build_note_guidance
-from services.text_processing import strip_tool_calls
+from services.text_processing import clean_llm_output
 
 
 class SummarizationService:
@@ -40,7 +40,7 @@ class SummarizationService:
         if self._config.strip_thinking_tokens:
             summary_text = strip_thinking_tokens(summary_text)
 
-        summary_text = strip_tool_calls(summary_text).strip()
+        summary_text = clean_llm_output(summary_text)
 
         return summary_text or "暂无可用信息"
 
@@ -107,7 +107,7 @@ class SummarizationService:
             else:
                 cleaned = visible_output
 
-            return strip_tool_calls(cleaned).strip()
+            return clean_llm_output(cleaned)
 
         return generator(), get_summary
 

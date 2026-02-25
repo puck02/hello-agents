@@ -17,8 +17,318 @@ import time
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
-from hello_agents.tools import MemoryTool, RAGTool
 import gradio as gr
+import uuid
+import re
+import math
+from hello_agents import HelloAgentsLLM
+
+# ── MemoryTool 实现（hello-agents 0.1.1 尚未内置，此处自行实现）──
+class MemoryTool:
+    """四种记忆类型的统一管理工具，模拟人类认知记忆系统（纯 Python 实现）。"""
+    WORKING_CAPACITY = 50
+
+    def __init__(self, user_id: str, memory_types: list = None):
+        self.user_id      = user_id
+        self.memory_types = memory_types or ["working", "episodic", "semantic", "perceptual"]
+        self._stores: dict = {t: [] for t in self.memory_types}
+
+    def run(self, params: dict) -> str:
+        action = params.get("action", "")
+        return {
+            "add":         self._add,
+            "search":      self._search,
+            "summary":     self._summary,
+            "stats":       self._stats,
+            "update":      self._update,
+            "remove":      self._remove,
+            "forget":      self._forget,
+            "consolidate": self._consolidate,
+            "clear_all":   self._clear_all,
+        }.get(action, lambda p: f"❌ 未知操作: {action}")(params)
+
+    def _add(self, p):
+        mtype = p.get("memory_type", "working")
+        if mtype not in self._stores:
+            return f"❌ 记忆类型 '{mtype}' 未初始化"
+        record = {
+            "id": str(uuid.uuid4())[:8],
+            "content": p.get("content", ""),
+            "memory_type": mtype,
+            "importance": float(p.get("importance", 0.5)),
+            "created_at": time.time(),
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+        }
+        for k, v in p.items():
+            if k not in ("action", "content", "memory_type", "importance"):
+                record[k] = v
+        store = self._stores[mtype]
+        if mtype == "working" and len(store) >= self.WORKING_CAPACITY:
+            store.sort(key=lambda x: x["importance"])
+            store.pop(0)
+        store.append(record)
+        return f"✅ 已存入{mtype}记忆 [id={record['id']}，重要性={record['importance']}]"
+
+    def _tfidf_score(self, query, text):
+        q_words = set(re.findall(r'\w+', query.lower()))
+        t_words = re.findall(r'\w+', text.lower())
+        if not t_words:
+            return 0.0
+        return sum(1 for w in t_words if w in q_words) / len(t_words)
+
+    def _search(self, p):
+        query, mtype, limit = p.get("query", ""), p.get("memory_type"), int(p.get("limit", 5))
+        stores = [self._stores[mtype]] if mtype and mtype in self._stores else list(self._stores.values())
+        candidates = []
+        for store in stores:
+            for rec in store:
+                score = self._tfidf_score(query, rec["content"]) + rec["importance"] * 0.2
+                candidates.append((score, rec))
+        top = sorted(candidates, key=lambda x: -x[0])[:limit]
+        if not top:
+            return "未找到相关记忆"
+        return "\n".join(
+            f"[{r['memory_type']}] {r['content'][:80]}（重要性={r['importance']}, 相关度={s:.3f}）"
+            for s, r in top)
+
+    def _summary(self, p):
+        limit = int(p.get("limit", 10))
+        lines = [f"📋 用户 {self.user_id} 的记忆摘要："]
+        for mtype, store in self._stores.items():
+            recent = sorted(store, key=lambda x: -x["created_at"])[:limit]
+            lines.append(f"\n  [{mtype}] 共 {len(store)} 条，最近 {len(recent)} 条：")
+            for r in recent:
+                lines.append(f"    · {r['content'][:60]}")
+        return "\n".join(lines)
+
+    def _stats(self, p):
+        total = sum(len(s) for s in self._stores.values())
+        lines = [f"📊 记忆统计 (user={self.user_id})  总计: {total} 条"]
+        for mtype, store in self._stores.items():
+            avg = (sum(r["importance"] for r in store) / len(store)) if store else 0
+            lines.append(f"  {mtype:12s}: {len(store):3d} 条  平均重要性={avg:.2f}")
+        return "\n".join(lines)
+
+    def _update(self, p):
+        rid = p.get("id")
+        for store in self._stores.values():
+            for rec in store:
+                if rec["id"] == rid:
+                    rec.update({k: v for k, v in p.items() if k not in ("action", "id")})
+                    return f"✅ 记忆 [id={rid}] 已更新"
+        return f"❌ 未找到 id={rid}"
+
+    def _remove(self, p):
+        rid = p.get("id")
+        for key, store in self._stores.items():
+            for rec in store:
+                if rec["id"] == rid:
+                    store.remove(rec)
+                    return f"✅ 已从 {key} 删除 [id={rid}]"
+        return f"❌ 未找到 id={rid}"
+
+    def _forget(self, p):
+        thr = float(p.get("importance_threshold", 0.4))
+        removed = 0
+        for key, store in self._stores.items():
+            before = len(store)
+            self._stores[key] = [r for r in store if r["importance"] >= thr]
+            removed += before - len(self._stores[key])
+        return f"✅ 已遗忘 {removed} 条重要性 < {thr} 的记忆"
+
+    def _consolidate(self, p):
+        src, tgt = p.get("source_type", "working"), p.get("target_type", "episodic")
+        thr = float(p.get("importance_threshold", 0.7))
+        if src not in self._stores or tgt not in self._stores:
+            return "❌ 记忆类型不存在"
+        count = 0
+        for rec in self._stores[src]:
+            if rec["importance"] >= thr:
+                new = {**rec, "id": str(uuid.uuid4())[:8], "memory_type": tgt,
+                       "importance": min(1.0, rec["importance"] * 1.1), "consolidated_from": src}
+                self._stores[tgt].append(new)
+                count += 1
+        return f"✅ 已将 {count} 条 {src} 记忆（重要性>={thr}）整合到 {tgt}"
+
+    def _clear_all(self, p):
+        for key in self._stores:
+            self._stores[key] = []
+        return "✅ 所有记忆已清空"
+
+
+# ── RAGTool 实现（hello-agents 0.1.1 尚未内置，此处自行实现）──
+class RAGTool:
+    """检索增强生成工具：文档管道 → TF-IDF 检索 → LLM 问答。"""
+
+    def __init__(self, knowledge_base_path: str = "./rag_kb", rag_namespace: str = "default"):
+        from pathlib import Path
+        self.kb_path   = Path(knowledge_base_path)
+        self.namespace = rag_namespace
+        self.kb_path.mkdir(parents=True, exist_ok=True)
+        self._chunks: list = []
+        self._vocab:  dict = {}
+        self._idf:    dict = {}
+        self._tfidf_matrix: list = []
+        self._load_index()
+
+    def run(self, params: dict) -> str:
+        action = params.get("action", "")
+        dispatch = {
+            "add_document": self._add_document,
+            "search":       self._search,
+            "query":        self._query,
+            "ask":          self._query,   # 兼容 action="ask" 的调用方式
+            "status":       self._status,
+            "stats":        self._status,  # 兼容 action="stats"
+        }
+        fn = dispatch.get(action)
+        if not fn:
+            return f"❌ 未知操作: {action}"
+        return fn(params)
+
+    def _add_document(self, p: dict) -> str:
+        from pathlib import Path
+        file_path = p.get("file_path", "")
+        metadata  = p.get("metadata", {})
+        if not file_path or not Path(file_path).exists():
+            return f"❌ 文件不存在: {file_path}"
+        text = self._read_file(file_path)
+        chunks = self._chunk_text(text)
+        source = Path(file_path).name
+        for chunk in chunks:
+            self._chunks.append({"id": str(uuid.uuid4())[:8], "text": chunk,
+                                  "metadata": metadata, "source": source})
+        self._build_index()
+        self._save_index()
+        return f"✅ 已添加 {len(chunks)} 个分块 (来源: {source}，总块数: {len(self._chunks)})"
+
+    def _search(self, p: dict) -> str:
+        query = p.get("query", "") or p.get("question", "")
+        top_k = int(p.get("top_k", p.get("limit", 3)))
+        if not self._chunks:
+            return "知识库为空，请先添加文档"
+        scores = self._cosine_scores(query)
+        top = sorted(scores, key=lambda x: -x[1])[:top_k]
+        if not top:
+            return "未找到相关内容"
+        lines = []
+        for rank, (idx, score) in enumerate(top, 1):
+            chunk = self._chunks[idx]
+            lines.append(f"[{rank}] 来源: {chunk['source']}  相关度: {score:.3f}\n    {chunk['text'][:200]}")
+        return "\n\n".join(lines)
+
+    def _query(self, p: dict) -> str:
+        query = p.get("query", "") or p.get("question", "")
+        context_str = self._search(p)
+        try:
+            llm = HelloAgentsLLM()
+            prompt = (f"请根据以下参考资料回答问题，如资料中没有相关信息请如实说明。\n\n"
+                      f"参考资料：\n{context_str}\n\n问题：{query}")
+            return llm.invoke([{"role": "user", "content": prompt}])
+        except Exception as e:
+            return f"[LLM 不可用，以下为检索结果]\n{context_str}\n\n(LLM 错误: {e})"
+
+    def _status(self, p: dict) -> str:
+        from collections import defaultdict
+        sources = defaultdict(int)
+        for c in self._chunks:
+            sources[c["source"]] += 1
+        lines = [f"📊 RAGTool 状态 (namespace={self.namespace})",
+                 f"  总块数: {len(self._chunks)}", f"  词汇量: {len(self._vocab)}", "  已索引文件："]
+        for src, cnt in sources.items():
+            lines.append(f"    · {src}  ({cnt} 块)")
+        return "\n".join(lines)
+
+    def _read_file(self, path: str) -> str:
+        import pathlib
+        suffix = pathlib.Path(path).suffix.lower()
+        if suffix == ".pdf":
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(path)
+                pages = []
+                for page in reader.pages:
+                    text = page.extract_text()
+                    if text:
+                        pages.append(text)
+                return "\n\n".join(pages)
+            except ImportError:
+                pass  # fall back to binary read
+            except Exception as e:
+                return f"[PDF读取错误: {e}]"
+        with open(path, encoding="utf-8", errors="ignore") as f:
+            return f.read()
+
+    def _chunk_text(self, text: str, max_len: int = 300) -> list:
+        paragraphs = re.split(r'\n{2,}', text.strip())
+        chunks = []
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            while len(para) > max_len:
+                chunks.append(para[:max_len])
+                para = para[max_len:]
+            if para:
+                chunks.append(para)
+        return chunks or [text[:max_len]]
+
+    def _tokenize(self, text: str) -> list:
+        return re.findall(r'\w+', text.lower())
+
+    def _build_index(self):
+        from collections import defaultdict
+        N = len(self._chunks)
+        if N == 0:
+            return
+        df: dict = defaultdict(int)
+        chunk_tokens = []
+        for chunk in self._chunks:
+            toks = self._tokenize(chunk["text"])
+            chunk_tokens.append(toks)
+            for t in set(toks):
+                df[t] += 1
+        self._vocab = {t: i for i, t in enumerate(df.keys())}
+        self._idf = {t: math.log((N + 1) / (cnt + 1)) + 1 for t, cnt in df.items()}
+        self._tfidf_matrix = []
+        for toks in chunk_tokens:
+            from collections import defaultdict as dd
+            tf: dict = dd(float)
+            for t in toks:
+                tf[t] += 1
+            total = len(toks) or 1
+            self._tfidf_matrix.append({t: (cnt / total) * self._idf.get(t, 1) for t, cnt in tf.items()})
+
+    def _cosine_scores(self, query: str) -> list:
+        from collections import defaultdict
+        q_toks = self._tokenize(query)
+        q_tf: dict = defaultdict(float)
+        for t in q_toks:
+            q_tf[t] += 1
+        total = len(q_toks) or 1
+        q_vec = {t: (cnt / total) * self._idf.get(t, 1) for t, cnt in q_tf.items()}
+        q_norm = math.sqrt(sum(v * v for v in q_vec.values())) or 1
+        results = []
+        for idx, doc_vec in enumerate(self._tfidf_matrix):
+            dot = sum(q_vec.get(t, 0) * v for t, v in doc_vec.items())
+            d_norm = math.sqrt(sum(v * v for v in doc_vec.values())) or 1
+            results.append((idx, dot / (q_norm * d_norm)))
+        return results
+
+    def _index_file(self):
+        return self.kb_path / f"{self.namespace}_index.json"
+
+    def _save_index(self):
+        with open(self._index_file(), "w", encoding="utf-8") as f:
+            json.dump(self._chunks, f, ensure_ascii=False)
+
+    def _load_index(self):
+        fp = self._index_file()
+        if fp.exists():
+            with open(fp, encoding="utf-8") as f:
+                self._chunks = json.load(f)
+            if self._chunks:
+                self._build_index()
 
 class PDFLearningAssistant:
     """智能文档问答助手"""
@@ -263,8 +573,8 @@ def create_gradio_ui():
         if pdf_file is None:
             return "❌ 请上传PDF文件"
 
-        # Gradio上传的文件是临时文件对象
-        pdf_path = pdf_file.name
+        # Gradio 5+/6+ type="filepath" 直接返回路径字符串
+        pdf_path = pdf_file if isinstance(pdf_file, str) else pdf_file.name
         result = assistant_state["assistant"].load_document(pdf_path)
 
         if result["success"]:
@@ -275,7 +585,11 @@ def create_gradio_ui():
     def chat(message: str, history: List) -> Tuple[str, List]:
         """聊天功能"""
         if assistant_state["assistant"] is None:
-            return "", history + [[message, "❌ 请先初始化助手并加载文档"]]
+            history = history + [
+                {"role": "user", "content": message},
+                {"role": "assistant", "content": "❌ 请先初始化助手并加载文档"}
+            ]
+            return "", history
 
         if not message.strip():
             return "", history
@@ -290,7 +604,10 @@ def create_gradio_ui():
             response = assistant_state["assistant"].ask(message)
             response = f"💡 **回答**\n\n{response}"
 
-        history.append([message, response])
+        history = history + [
+            {"role": "user", "content": message},
+            {"role": "assistant", "content": response}
+        ]
         return "", history
 
     def add_note_ui(note_content: str, concept: str) -> str:
@@ -335,7 +652,7 @@ def create_gradio_ui():
         return result
 
     # 创建Gradio界面
-    with gr.Blocks(title="智能文档问答助手", theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(title="智能文档问答助手") as demo:
         gr.Markdown("""
         # 📚 智能文档问答助手
 
@@ -369,12 +686,15 @@ def create_gradio_ui():
             load_output = gr.Textbox(label="加载状态", interactive=False)
             load_btn.click(load_pdf, inputs=[pdf_upload], outputs=[load_output])
 
+        # 页面加载时自动初始化默认用户
+        demo.load(init_assistant, inputs=[user_id_input], outputs=[init_output])
+
         with gr.Tab("💬 智能问答"):
             gr.Markdown("### 向文档提问或回顾学习历程")
             chatbot = gr.Chatbot(
                 label="对话历史",
                 height=400,
-                bubble_full_width=False
+                type="messages"
             )
             with gr.Row():
                 msg_input = gr.Textbox(
@@ -439,7 +759,8 @@ def main():
         server_name="0.0.0.0",
         server_port=7860,
         share=False,
-        show_error=True
+        show_error=True,
+        theme=gr.themes.Soft()
     )
 
 
