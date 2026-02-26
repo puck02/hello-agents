@@ -8,13 +8,27 @@ from models import TodoItem
 
 
 def build_note_guidance(task: TodoItem) -> str:
-    """Generate note tool usage guidance for a specific task."""
+    """为指定任务生成笔记工具的使用指引，拼接进 LLM 的 Prompt 中。
 
+    研究系统设计了"笔记协作"机制：每个任务有一个对应的笔记（note），
+    LLM Agent 在生成摘要前必须先读取笔记获取已有内容，完成后再将新信息写回笔记，
+    实现多轮、多任务之间的信息持久化和共享。
+
+    此函数根据任务是否已有笔记，生成两种不同的指引文本：
+    - 已有笔记（task.note_id 非空）：指引 Agent 先读取再更新
+    - 尚无笔记（task.note_id 为空）：指引 Agent 先创建笔记
+    """
+
+    # 为该任务的笔记统一打上标签，方便后续按 task_id 快速检索
     tags_list = ["deep_research", f"task_{task.id}"]
     tags_literal = json.dumps(tags_list, ensure_ascii=False)
 
     if task.note_id:
+        # ── 情况一：任务已有笔记 ──────────────────────────────────
+        # 构造「读取笔记」的工具调用指令，让 Agent 在总结前先获取已有内容
         read_payload = json.dumps({"action": "read", "note_id": task.note_id}, ensure_ascii=False)
+
+        # 构造「更新笔记」的工具调用指令，让 Agent 将本轮新信息增量写入
         update_payload = json.dumps(
             {
                 "action": "update",
@@ -28,6 +42,7 @@ def build_note_guidance(task: TodoItem) -> str:
             ensure_ascii=False,
         )
 
+        # 返回完整的指引文本，[TOOL_CALL:note:...] 是系统约定的工具调用格式
         return (
             "笔记协作指引：\n"
             f"- 当前任务笔记 ID：{task.note_id}。\n"
@@ -38,6 +53,8 @@ def build_note_guidance(task: TodoItem) -> str:
             "- 成功同步到笔记后，再输出面向用户的总结。\n"
         )
 
+    # ── 情况二：任务尚未建立笔记 ─────────────────────────────────
+    # 构造「创建笔记」的工具调用指令，让 Agent 先建立笔记再进行后续操作
     create_payload = json.dumps(
         {
             "action": "create",

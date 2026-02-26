@@ -148,29 +148,39 @@ class DeepResearchAgent:
         )
 
     def run_stream(self, topic: str) -> Iterator[dict[str, Any]]:
-        """Execute the workflow yielding incremental progress events."""
+        """流式执行研究工作流，每完成一个步骤就 yield 一个进度事件字典给调用方。"""
+
+        # ── 阶段一：初始化 ──────────────────────────────────────────
         state = SummaryState(research_topic=topic)
         logger.debug("Starting streaming research: topic=%s", topic)
+        # 立刻推送第一条事件，让前端知道流已开始
         yield {"type": "status", "message": "初始化研究流程"}
 
+        # ── 阶段二：LLM 规划 TODO 任务列表 ─────────────────────────
         state.todo_items = self.planner.plan_todo_list(state)
+        # 将规划过程中产生的工具调用事件（如笔记操作）推送给前端
         for event in self._drain_tool_events(state, step=0):
             yield event
+        # 若 LLM 未生成任何任务，则降级为单个兜底任务
         if not state.todo_items:
             state.todo_items = [self.planner.create_fallback_task(state)]
 
+        # 为每个任务分配步骤编号和流式令牌，供前端区分不同任务的进度
         channel_map: dict[int, dict[str, Any]] = {}
         for index, task in enumerate(state.todo_items, start=1):
             token = f"task_{task.id}"
             task.stream_token = token
             channel_map[task.id] = {"step": index, "token": token}
 
+        # 推送完整任务列表，前端可据此渲染任务面板
         yield {
             "type": "todo_list",
             "tasks": [self._serialize_task(t) for t in state.todo_items],
             "step": 0,
         }
 
+        # ── 阶段三：多线程并行执行任务 ──────────────────────────────
+        # 使用队列在子线程与主线程之间传递事件，保证线程安全
         event_queue: Queue[dict[str, Any]] = Queue()
 
         def enqueue(
@@ -179,6 +189,7 @@ class DeepResearchAgent:
             task: TodoItem | None = None,
             step_override: int | None = None,
         ) -> None:
+            # 将事件补充 task_id / step / stream_token 后放入队列
             payload = dict(event)
             target_task_id = payload.get("task_id")
             if task is not None:
@@ -194,6 +205,7 @@ class DeepResearchAgent:
             event_queue.put(payload)
 
         def tool_event_sink(event: dict[str, Any]) -> None:
+            # 工具调用（如笔记读写）产生的事件也通过队列转发给前端
             enqueue(event)
 
         self._set_tool_event_sink(tool_event_sink)
@@ -201,7 +213,9 @@ class DeepResearchAgent:
         threads: list[Thread] = []
 
         def worker(task: TodoItem, step: int) -> None:
+            """每个子任务的工作线程：执行搜索+摘要，将产出事件推入队列。"""
             try:
+                # 通知前端该任务开始执行
                 enqueue(
                     {
                         "type": "task_status",
@@ -215,10 +229,12 @@ class DeepResearchAgent:
                     task=task,
                 )
 
+                # 执行任务并将每一条流式事件放入队列
                 for event in self._execute_task(state, task, emit_stream=True, step=step):
                     enqueue(event, task=task)
             except Exception as exc:  # pragma: no cover - defensive guardrail
                 logger.exception("Task execution failed", exc_info=exc)
+                # 任务失败时推送失败事件，不影响其他任务继续运行
                 enqueue(
                     {
                         "type": "task_status",
@@ -233,8 +249,10 @@ class DeepResearchAgent:
                     task=task,
                 )
             finally:
+                # 无论成功还是失败，都发送内部哨兵事件通知主线程该任务已结束
                 enqueue({"type": "__task_done__", "task_id": task.id})
 
+        # 为每个任务启动独立线程，实现并行研究
         for task in state.todo_items:
             step = channel_map.get(task.id, {}).get("step", 0)
             thread = Thread(target=worker, args=(task, step), daemon=True)
@@ -245,13 +263,16 @@ class DeepResearchAgent:
         finished_workers = 0
 
         try:
+            # 主线程持续从队列取事件并 yield 给调用方，直到所有子线程完成
             while finished_workers < active_workers:
-                event = event_queue.get()
+                event = event_queue.get()  # 阻塞等待，有事件才继续
                 if event.get("type") == "__task_done__":
+                    # 哨兵事件：仅计数，不推送给前端
                     finished_workers += 1
                     continue
                 yield event
 
+            # 所有线程结束后，取出队列中残留的最后几条事件
             while True:
                 try:
                     event = event_queue.get_nowait()
@@ -260,27 +281,33 @@ class DeepResearchAgent:
                 if event.get("type") != "__task_done__":
                     yield event
         finally:
+            # 无论正常结束还是异常中断，都要清理工具事件回调并等待线程退出
             self._set_tool_event_sink(None)
             for thread in threads:
                 thread.join()
 
+        # ── 阶段四：生成最终汇总报告 ────────────────────────────────
         report = self.reporting.generate_report(state)
         final_step = len(state.todo_items) + 1
+        # 推送报告生成阶段产生的工具调用事件
         for event in self._drain_tool_events(state, step=final_step):
             yield event
         state.structured_report = report
         state.running_summary = report
 
+        # 若启用了笔记功能，将报告持久化并推送笔记保存事件
         note_event = self._persist_final_report(state, report)
         if note_event:
             yield note_event
 
+        # 推送最终报告内容
         yield {
             "type": "final_report",
             "report": report,
             "note_id": state.report_note_id,
             "note_path": state.report_note_path,
         }
+        # 推送结束标志，前端收到后关闭 SSE 连接
         yield {"type": "done"}
 
     # ------------------------------------------------------------------

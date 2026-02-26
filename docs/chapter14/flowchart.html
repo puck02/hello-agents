@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>第十四章 · 深度研究助手 · 函数调用流程图</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+      padding: 28px 24px 48px;
+    }
+
+    header { text-align: center; margin-bottom: 24px; }
+    header h1 {
+      font-size: 1.75rem; font-weight: 700;
+      color: #1a202c; letter-spacing: -0.5px;
+    }
+    header p {
+      margin-top: 8px; color: #718096;
+      font-size: 0.92rem; line-height: 1.6;
+    }
+    header code {
+      background: #edf2f7; padding: 2px 6px;
+      border-radius: 4px; font-size: 0.9em;
+    }
+
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      justify-content: center; margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.82rem; color: #4a5568;
+      background: #fff; padding: 4px 10px;
+      border-radius: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+    .chart-outer {
+      position: relative;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .zoom-bar {
+      position: absolute;
+      top: 14px; right: 14px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .zoom-bar button {
+      width: 36px; height: 36px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      color: #4a5568;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      transition: background 0.15s, color 0.15s;
+      padding: 0;
+    }
+    .zoom-bar button:hover { background: #ebf8ff; color: #2b6cb0; }
+    .zoom-bar .reset-btn { font-size: 12px; height: 28px; }
+
+    .hint {
+      position: absolute;
+      bottom: 10px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.74rem;
+      color: #718096;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #chart-wrap {
+      width: 100%;
+      height: 82vh;
+      overflow: hidden;
+    }
+    #chart-wrap svg {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    #tooltip {
+      position: fixed;
+      z-index: 9999;
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 5px 11px;
+      border-radius: 7px;
+      font-size: 0.76rem;
+      font-family: monospace;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s;
+      max-width: 460px;
+      word-break: break-all;
+    }
+    #tooltip.visible { opacity: 1; }
+
+    footer {
+      text-align: center; margin-top: 22px;
+      font-size: 0.78rem; color: #a0aec0;
+    }
+    footer a { color: #63b3ed; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>深度研究助手 · 函数调用流程图</h1>
+  <p>Hello-Agents 第十四章 · <code>helloagents-deepresearch</code> 核心调用链<br/>
+     点击节点跳转 VS Code &nbsp;·&nbsp; 滚轮缩放 &nbsp;·&nbsp; 拖拽平移 &nbsp;·&nbsp; 键盘 <kbd>+</kbd><kbd>-</kbd><kbd>0</kbd></p>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4299e1;"></div>路由层 main.py</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#805ad5;"></div>智能体层 agent.py</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#38a169;"></div>规划服务 planner.py</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#dd6b20;"></div>搜索服务 search.py</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#d69e2e;"></div>总结服务 summarizer.py</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e53e3e;"></div>报告服务 reporter.py</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#319795;"></div>工具层 tool_events / text_processing</div>
+</div>
+
+<div class="chart-outer">
+  <div class="zoom-bar">
+    <button title="放大 (+)" onclick="pz&&pz.zoomIn()">＋</button>
+    <button title="缩小 (-)" onclick="pz&&pz.zoomOut()">－</button>
+    <button class="reset-btn" title="重置视图 (0)" onclick="pz&&(pz.resetZoom(),pz.resetPan())">⊙ 重置</button>
+  </div>
+  <div class="hint">🖱 滚轮缩放 &nbsp;|&nbsp; 拖拽平移 &nbsp;|&nbsp; 悬停查看路径 &nbsp;|&nbsp; 点击跳转代码</div>
+
+  <div id="chart-wrap">
+    <!-- SVG injected here by mermaid.render() -->
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<footer>
+  Hello-Agents · Chapter 14 · helloagents-deepresearch ·
+  <a href="https://github.com/datawhalechina/Hello-Agents" target="_blank">GitHub</a>
+</footer>
+
+<script>
+  // ── Node → vscode:// URL map ───────────────────────────────────────────────
+  const BASE = '/root/workspace/hello-agents/code/chapter14/helloagents-deepresearch/backend/src';
+  const SVC  = BASE + '/services';
+  const nodeUrls = {
+    R1: `vscode://file/${BASE}/main.py:157`,
+    R2: `vscode://file/${BASE}/main.py:164`,
+    R3: `vscode://file/${BASE}/main.py:76`,
+    A1: `vscode://file/${BASE}/agent.py:35`,
+    A2: `vscode://file/${BASE}/agent.py:79`,
+    A3: `vscode://file/${BASE}/agent.py:109`,
+    A4: `vscode://file/${BASE}/agent.py:150`,
+    A5: `vscode://file/${BASE}/agent.py:203`,
+    A6: `vscode://file/${BASE}/agent.py:289`,
+    A7: `vscode://file/${BASE}/agent.py:415`,
+    A8: `vscode://file/${BASE}/agent.py:447`,
+    P1: `vscode://file/${SVC}/planner.py:31`,
+    P2: `vscode://file/${SVC}/planner.py:83`,
+    P3: `vscode://file/${SVC}/planner.py:113`,
+    S1: `vscode://file/${SVC}/search.py:23`,
+    S2: `vscode://file/${SVC}/search.py:80`,
+    U1: `vscode://file/${SVC}/summarizer.py:47`,
+    U2: `vscode://file/${SVC}/summarizer.py:114`,
+    G1: `vscode://file/${SVC}/reporter.py:20`,
+    T1: `vscode://file/${SVC}/tool_events.py:41`,
+    T2: `vscode://file/${SVC}/tool_events.py:91`,
+    T3: `vscode://file/${SVC}/text_processing.py:47`,
+  };
+
+  // ── Tooltip ────────────────────────────────────────────────────────────────
+  const ttEl = document.getElementById('tooltip');
+  const showTT = (e, txt) => { ttEl.textContent = txt; ttEl.classList.add('visible'); moveTT(e); };
+  const moveTT = (e) => { ttEl.style.left = (e.clientX + 16) + 'px'; ttEl.style.top = (e.clientY - 12) + 'px'; };
+  const hideTT = ()  => ttEl.classList.remove('visible');
+
+  // ── Pan-zoom instance ──────────────────────────────────────────────────────
+  let pz = null;
+
+  // ── Wire up click + hover after SVG is in the DOM ─────────────────────────
+  function bindNodes(svgEl) {
+    Object.entries(nodeUrls).forEach(([id, url]) => {
+      // Mermaid v10 flowchart node ids: "flowchart-{ID}-{n}"
+      const el = svgEl.querySelector(`[id^="flowchart-${id}-"]`)
+               || svgEl.querySelector(`[id="flowchart-${id}"]`);
+      if (!el) { console.warn('node not found:', id); return; }
+
+      el.style.cursor = 'pointer';
+
+      const shapes = () => el.querySelectorAll('rect,polygon,ellipse,circle,path');
+
+      el.addEventListener('mouseenter', e => {
+        // Show filename:line from URL
+        const label = url.replace('vscode://file/', '');
+        const parts = label.split('/');
+        showTT(e, '📂 ' + parts.slice(-3).join('/'));
+        shapes().forEach(s => s.style.filter = 'drop-shadow(0 0 7px rgba(66,153,225,0.85))');
+      });
+      el.addEventListener('mousemove', moveTT);
+      el.addEventListener('mouseleave', () => {
+        hideTT();
+        shapes().forEach(s => s.style.filter = '');
+      });
+
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Works in VS Code Simple Browser + Electron (webview allows vscode://)
+        window.location.href = url;
+      });
+    });
+  }
+
+  // ── Mermaid diagram source ─────────────────────────────────────────────────
+  const DIAGRAM = `%%{init:{"theme":"base","themeVariables":{"primaryColor":"#ebf8ff","primaryTextColor":"#1a202c","primaryBorderColor":"#90cdf4","lineColor":"#718096","secondaryColor":"#f0fff4","tertiaryColor":"#fffbeb","fontSize":"14px"}}}%%
+flowchart TD
+
+  subgraph ROUTE["🌐 路由层"]
+    R1["stream_research()\\nmain.py : 157"]
+    R2["event_iterator()\\nmain.py : 164"]
+    R3["_build_config()\\nmain.py : 76"]
+  end
+
+  subgraph AGENT["🤖 智能体层"]
+    A1["DeepResearchAgent.__init__()\\nagent.py : 35"]
+    A2["_init_llm()\\nagent.py : 79"]
+    A3["_create_tool_aware_agent()\\nagent.py : 109"]
+    A4["run_stream()\\nagent.py : 150"]
+    A5["worker()\\nagent.py : 203"]
+    A6["_execute_task()\\nagent.py : 289"]
+    A7["_drain_tool_events()\\nagent.py : 415"]
+    A8["_persist_final_report()\\nagent.py : 447"]
+  end
+
+  subgraph PLAN["📋 规划服务"]
+    P1["PlanningService.plan_todo_list()\\nplanner.py : 31"]
+    P2["_extract_tasks()\\nplanner.py : 83"]
+    P3["_extract_json_payload()\\nplanner.py : 113"]
+  end
+
+  subgraph SEARCH["🔍 搜索服务"]
+    S1["dispatch_search()\\nsearch.py : 23"]
+    S2["prepare_research_context()\\nsearch.py : 80"]
+  end
+
+  subgraph SUM["📝 总结服务"]
+    U1["stream_task_summary()\\nsummarizer.py : 47"]
+    U2["_build_prompt()\\nsummarizer.py : 114"]
+  end
+
+  subgraph RPT["📊 报告服务"]
+    G1["ReportingService.generate_report()\\nreporter.py : 20"]
+  end
+
+  subgraph TOOLS["🔧 工具层"]
+    T1["ToolCallTracker.record()\\ntool_events.py : 41"]
+    T2["ToolCallTracker.drain()\\ntool_events.py : 91"]
+    T3["clean_llm_output()\\ntext_processing.py : 47"]
+  end
+
+  R1 -->|"POST /research/stream"| R2
+  R1 -->|"读取 .env"| R3
+  R2 -->|"构造 Agent"| A1
+  A1 --> A2
+  A1 --> A3
+  A1 -->|"启动流式研究"| A4
+  A4 -->|"线程池 submit"| A5
+  A5 -->|"每个 TODO 任务"| A6
+  A6 -->|"① 规划阶段"| P1
+  P1 --> P2
+  P2 --> P3
+  A6 -->|"② 搜索阶段"| S1
+  S1 --> S2
+  A6 -->|"③ 总结阶段"| U1
+  U1 --> U2
+  U2 --> T3
+  A6 -->|"④ 报告阶段"| G1
+  G1 --> T3
+  A6 --> T1
+  A6 --> A7
+  A7 --> T2
+  A5 --> A8
+
+  classDef route    fill:#bee3f8,stroke:#4299e1,stroke-width:2px,color:#1a365d
+  classDef agent    fill:#e9d8fd,stroke:#805ad5,stroke-width:2px,color:#322659
+  classDef planning fill:#c6f6d5,stroke:#38a169,stroke-width:2px,color:#1c4532
+  classDef search   fill:#fbd38d,stroke:#dd6b20,stroke-width:2px,color:#7b341e
+  classDef summ     fill:#fefcbf,stroke:#d69e2e,stroke-width:2px,color:#744210
+  classDef report   fill:#fed7d7,stroke:#e53e3e,stroke-width:2px,color:#63171b
+  classDef tools    fill:#b2f5ea,stroke:#319795,stroke-width:2px,color:#1d4044
+
+  class R1,R2,R3 route
+  class A1,A2,A3,A4,A5,A6,A7,A8 agent
+  class P1,P2,P3 planning
+  class S1,S2 search
+  class U1,U2 summ
+  class G1 report
+  class T1,T2,T3 tools`;
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'loose',
+    flowchart: { curve: 'basis', useMaxWidth: true, htmlLabels: true },
+    theme: 'base',
+  });
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const wrap = document.getElementById('chart-wrap');
+
+    try {
+      const { svg } = await mermaid.render('flowchart-main', DIAGRAM);
+      wrap.innerHTML = svg;
+    } catch (err) {
+      wrap.innerHTML = `<pre style="color:red;padding:20px">Mermaid render error:\n${err}</pre>`;
+      return;
+    }
+
+    const svgEl = wrap.querySelector('svg');
+    if (!svgEl) return;
+
+    svgEl.removeAttribute('width');
+    svgEl.removeAttribute('height');
+    svgEl.removeAttribute('style');   // strip Mermaid's inline max-width
+    svgEl.style.width  = '100%';
+    svgEl.style.height = '100%';
+    svgEl.style.display = 'block';
+
+    // Trim viewBox to actual content bounding box so svg-pan-zoom
+    // doesn't treat the Mermaid-generated right-side whitespace as content
+    const rootG = svgEl.querySelector('g');
+    if (rootG) {
+      const bb  = rootG.getBBox();
+      const pad = 24;
+      svgEl.setAttribute('viewBox',
+        `${bb.x - pad} ${bb.y - pad} ${bb.width + pad * 2} ${bb.height + pad * 2}`);
+    }
+
+    // Bind click/hover
+    bindNodes(svgEl);
+
+    // Init pan-zoom (preventMouseEventsDefault:false lets clicks through)
+    pz = svgPanZoom(svgEl, {
+      zoomEnabled: true,
+      panEnabled: true,
+      controlIconsEnabled: false,
+      dblClickZoomEnabled: false,
+      mouseWheelZoomEnabled: true,
+      preventMouseEventsDefault: false,
+      zoomScaleSensitivity: 0.25,
+      minZoom: 0.1,
+      maxZoom: 15,
+      fit: true,
+      center: true,
+    });
+    // Force fit+center after viewBox has been corrected
+    pz.fit();
+    pz.center();
+
+    // Keyboard: +/- zoom, 0 reset
+    document.addEventListener('keydown', e => {
+      if (!pz) return;
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); pz.zoomIn(); }
+      else if (e.key === '-')              { e.preventDefault(); pz.zoomOut(); }
+      else if (e.key === '0')              { e.preventDefault(); pz.resetZoom(); pz.resetPan(); }
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Serve flowchart ch14 (port 8765)",
+      "type": "shell",
+      "command": "fuser -k 8765/tcp 2>/dev/null; python3 -m http.server 8765 -d ${workspaceFolder}/docs/chapter14",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Serve flowchart ch15 (port 8765)",
+      "type": "shell",
+      "command": "fuser -k 8765/tcp 2>/dev/null; python3 -m http.server 8765 -d ${workspaceFolder}/docs/chapter15",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false
+      },
+      "problemMatcher": []
+    }
+  ]
+}
