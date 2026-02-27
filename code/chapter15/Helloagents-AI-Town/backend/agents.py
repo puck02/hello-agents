@@ -173,7 +173,7 @@ class NPCAgentManager:
             return f"错误: NPC '{npc_name}' 不存在"
 
         agent = self.agents[npc_name]
-        memory_manager = self.memories.get(npc_name)
+        memory_manager = self.memories.get(npc_name) #每个npc有一个记忆管理器
 
         if agent is None:
             # 模拟模式回复
@@ -181,6 +181,8 @@ class NPCAgentManager:
             return f"你好!我是{npc_name},一名{role['title']}。(当前为模拟模式,请配置API_KEY以启用AI对话)"
 
         try:
+            import time as _time
+            _t0 = _time.time()
             # 记录对话开始 ⭐ 使用日志系统
             log_dialogue_start(npc_name, message)
 
@@ -197,6 +199,7 @@ class NPCAgentManager:
 
 """
                 log_affinity(npc_name, affinity, affinity_level)
+            print(f"[TIMER] step1(affinity): {_time.time()-_t0:.2f}s")
 
             # ⭐ 2. 检索相关记忆
             relevant_memories = []
@@ -208,6 +211,7 @@ class NPCAgentManager:
                     min_importance=0.3  # 只检索重要性>=0.3的记忆
                 )
                 log_memory_retrieval(npc_name, len(relevant_memories), relevant_memories)
+            print(f"[TIMER] step2(retrieve_memories): {_time.time()-_t0:.2f}s")
 
             # ⭐ 3. 构建增强的提示词 (包含好感度和记忆上下文)
             memory_context = self._build_memory_context(relevant_memories)
@@ -221,33 +225,37 @@ class NPCAgentManager:
             log_generating_response()
             response = agent.run(enhanced_message)
             log_npc_response(npc_name, response)
+            print(f"[TIMER] step4(agent.run): {_time.time()-_t0:.2f}s")
 
-            # ⭐ 5. 分析并更新好感度
-            log_analyzing_affinity()
-            if self.relationship_manager:
-                affinity_result = self.relationship_manager.analyze_and_update_affinity(
-                    npc_name=npc_name,
-                    player_message=message,
-                    npc_response=response,
-                    player_id=player_id
-                )
+            # ⭐ 5 & 6. 好感度分析 + 记忆保存 → 后台执行，不阻塞返回
+            import threading
+            def _background_update():
+                try:
+                    affinity_result = {"changed": False, "affinity": 50.0}
+                    if self.relationship_manager:
+                        affinity_result = self.relationship_manager.analyze_and_update_affinity(
+                            npc_name=npc_name,
+                            player_message=message,
+                            npc_response=response,
+                            player_id=player_id
+                        )
+                        log_affinity_change(affinity_result)
+                    print(f"[BG] affinity_update done")
+                    if memory_manager:
+                        self._save_conversation_to_memory(
+                            memory_manager=memory_manager,
+                            npc_name=npc_name,
+                            player_message=message,
+                            npc_response=response,
+                            player_id=player_id,
+                            affinity_info=affinity_result
+                        )
+                        log_memory_saved(npc_name)
+                    print(f"[BG] memory saved")
+                except Exception as bg_e:
+                    print(f"[BG] background update failed: {bg_e}")
 
-                # 记录好感度变化详情 ⭐ 使用日志系统
-                log_affinity_change(affinity_result)
-            else:
-                affinity_result = {"changed": False, "affinity": 50.0}
-
-            # ⭐ 6. 保存对话到记忆 (包含好感度信息)
-            if memory_manager:
-                self._save_conversation_to_memory(
-                    memory_manager=memory_manager,
-                    npc_name=npc_name,
-                    player_message=message,
-                    npc_response=response,
-                    player_id=player_id,
-                    affinity_info=affinity_result
-                )
-                log_memory_saved(npc_name)
+            threading.Thread(target=_background_update, daemon=True).start()
 
             # 记录对话结束 ⭐ 使用日志系统
             log_dialogue_end()

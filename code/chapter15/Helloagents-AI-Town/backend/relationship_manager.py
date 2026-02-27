@@ -163,8 +163,12 @@ NPC: "当然可以!我很乐意分享。"
 """
         
         try:
-            # 调用分析Agent
-            response = self.analyzer_agent.run(prompt)
+            # 直接用 llm.invoke() 一次调用，避免 ReAct 循环卡死
+            messages = [
+                {"role": "system", "content": self._create_analyzer_prompt()},
+                {"role": "user", "content": prompt}
+            ]
+            response = self.llm.invoke(messages)
             
             # 解析JSON响应
             analysis = self._parse_analysis(response)

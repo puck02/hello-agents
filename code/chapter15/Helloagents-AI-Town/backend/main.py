@@ -1,9 +1,15 @@
 """赛博小镇 FastAPI 后端主程序"""
 
+# 优先加载 .env，确保所有环境变量（含 EMBED_MODEL_TYPE 等）在库初始化前生效
+from dotenv import load_dotenv
+import os as _os
+load_dotenv(dotenv_path=_os.path.join(_os.path.dirname(__file__), ".env"), override=True)
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
+import asyncio
 
 from config import settings
 from models import (
@@ -67,7 +73,7 @@ state_manager = None
 
 def get_managers():
     """获取管理器实例"""
-    global npc_manager, state_manager
+    global npc_manager, state_manager  #global声明，允许修改全局变量
     if npc_manager is None:
         npc_manager = get_npc_manager()
     if state_manager is None:
@@ -117,8 +123,22 @@ async def chat_with_npc(request: ChatRequest):
         )
     
     try:
-        # 调用NPC Agent处理对话
-        response_text = npc_mgr.chat(request.npc_name, request.message)
+        # npc_mgr.chat() 是同步阻塞函数（内部调用 LLM API，需等待网络响应）。
+        # FastAPI 跑在单线程 asyncio 事件循环上，若直接调用会卡住整个服务，
+        # 导致其他所有请求无法响应。
+        #
+        # run_in_executor 将阻塞调用提交到线程池（None 表示使用默认线程池），
+        # 事件循环立即挂起当前协程并继续处理其他请求；
+        # 待线程池中的 chat() 执行完毕后，再恢复此处继续向下执行。
+        #
+        # 参数说明：run_in_executor(executor, func, *args)
+        #   - None        : 使用 asyncio 默认的 ThreadPoolExecutor
+        #   - npc_mgr.chat: 要在线程中执行的同步函数
+        #   - request.npc_name, request.message: 传给 chat() 的位置参数
+        loop = asyncio.get_event_loop()
+        response_text = await loop.run_in_executor(
+            None, npc_mgr.chat, request.npc_name, request.message
+        )
         
         return ChatResponse(
             npc_name=request.npc_name,

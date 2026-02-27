@@ -1,309 +1,316 @@
-<mxfile host="app.diagrams.net" modified="2026-02-25T00:00:00.000Z" agent="GitHub Copilot" version="21.0.0">
-  <diagram id="cybertown-arch" name="赛博小镇架构流程图">
-    <mxGraphModel dx="1654" dy="1300" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1300" math="0" shadow="0">
-      <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-
-        <!-- ===== Title ===== -->
-        <mxCell id="title" value="赛博小镇（Helloagents-AI-Town）架构流程图（代码级）" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
-          <mxGeometry x="200" y="10" width="1260" height="36" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Layer 1: 用户端 (purple) ===== -->
-        <mxCell id="L1_bg" value="① 用户端" style="swimlane;startSize=24;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="55" width="1260" height="75" as="geometry" />
-        </mxCell>
-        <mxCell id="L1_user" value="👤 玩家" style="shape=mxgraph.general.person;fillColor=#9673a6;strokeColor=#6c4b7d;fontColor=#ffffff;fontSize=12;fontStyle=1;" vertex="1" parent="L1_bg">
-          <mxGeometry x="30" y="12" width="44" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="L1_wasd" value="WASD 移动角色&#xa;靠近 NPC 后按 E / Enter" style="rounded=1;whiteSpace=wrap;fillColor=#d5b8e8;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="L1_bg">
-          <mxGeometry x="110" y="18" width="230" height="38" as="geometry" />
-        </mxCell>
-        <mxCell id="L1_input" value="在 DialogueUI 输入框输入消息&#xa;点击发送 / 按回车提交" style="rounded=1;whiteSpace=wrap;fillColor=#d5b8e8;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="L1_bg">
-          <mxGeometry x="370" y="18" width="260" height="38" as="geometry" />
-        </mxCell>
-        <mxCell id="L1_env" value="运行环境：Godot 4.x + Python 后端&#xa;http://localhost:8000" style="rounded=1;whiteSpace=wrap;fillColor=#d5b8e8;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="L1_bg">
-          <mxGeometry x="660" y="18" width="280" height="38" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Layer 2: 前端代码层 (blue) ===== -->
-        <mxCell id="L2_bg" value="② 前端代码层（Godot 4 · GDScript）" style="swimlane;startSize=24;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="150" width="1260" height="175" as="geometry" />
-        </mxCell>
-
-        <!-- Scenes row -->
-        <mxCell id="L2_main_scene" value="main.tscn + main.gd&#xa;实例化玩家/NPC/UI&#xa;定时 GET /npcs/status" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="L2_bg">
-          <mxGeometry x="20" y="28" width="185" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="L2_player_scene" value="player.tscn + player.gd&#xa;CharacterBody2D&#xa;WASD 移动 · 按 E 触发对话" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="L2_bg">
-          <mxGeometry x="225" y="28" width="195" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="L2_npc_scene" value="npc.tscn + npc.gd&#xa;AnimatedSprite2D + Area2D&#xa;随机巡逻 · 头顶气泡" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="L2_bg">
-          <mxGeometry x="440" y="28" width="195" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="L2_dialogue_scene" value="dialogue_ui.tscn + dialogue_ui.gd&#xa;CanvasLayer · RichTextLabel&#xa;LineEdit + 发送按钮" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="L2_bg">
-          <mxGeometry x="655" y="28" width="220" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="L2_config" value="config.gd&#xa;API_BASE = http://localhost:8000&#xa;API_CHAT = /chat&#xa;NPC_STATUS_UPDATE_INTERVAL" style="rounded=1;whiteSpace=wrap;fillColor=#cce0ff;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="L2_bg">
-          <mxGeometry x="895" y="28" width="230" height="60" as="geometry" />
-        </mxCell>
-
-        <!-- API client row -->
-        <mxCell id="L2_api_client" value="api_client.gd（AutoLoad 单例）&#xa;send_chat(npc_name, message) → POST /chat&#xa;get_npc_status() → GET /npcs/status&#xa;信号：chat_response_received / chat_error / npc_status_received" style="rounded=1;whiteSpace=wrap;fillColor=#a0b8e8;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="L2_bg">
-          <mxGeometry x="20" y="105" width="500" height="58" as="geometry" />
-        </mxCell>
-        <mxCell id="L2_http" value="HTTPRequest 节点 × 3&#xa;http_chat / http_status / http_npcs&#xa;异步异步回调：request_completed 信号" style="rounded=1;whiteSpace=wrap;fillColor=#cce0ff;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="L2_bg">
-          <mxGeometry x="540" y="105" width="290" height="58" as="geometry" />
-        </mxCell>
-        <mxCell id="L2_signal" value="Godot 信号机制&#xa;松耦合通信（不阻塞游戏帧）&#xa;emit → 各自处理 UI 更新" style="rounded=1;whiteSpace=wrap;fillColor=#cce0ff;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="L2_bg">
-          <mxGeometry x="848" y="105" width="230" height="58" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Layer 3: 后端入口层 (green) ===== -->
-        <mxCell id="L3_bg" value="③ 后端入口层（FastAPI · main.py）" style="swimlane;startSize=24;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="345" width="1260" height="155" as="geometry" />
-        </mxCell>
-        <mxCell id="L3_uvicorn" value="uvicorn&#xa;host=settings.API_HOST&#xa;port=settings.API_PORT (8000)&#xa;lifespan 管理启停" style="rounded=1;whiteSpace=wrap;fillColor=#a8d5a2;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="L3_bg">
-          <mxGeometry x="20" y="28" width="175" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="L3_cors" value="CORSMiddleware&#xa;allow_origins=settings.CORS_ORIGINS&#xa;allow_credentials=True&#xa;allow_methods=[&quot;*&quot;]" style="rounded=1;whiteSpace=wrap;fillColor=#a8d5a2;strokeColor=#82b366;fontSize=11;" vertex="1" parent="L3_bg">
-          <mxGeometry x="210" y="28" width="185" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="L3_route_chat" value="POST /chat&#xa;→ chat_with_npc()&#xa;response_model=ChatResponse" style="rounded=1;whiteSpace=wrap;fillColor=#c8e6c0;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="L3_bg">
-          <mxGeometry x="410" y="28" width="175" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="L3_route_status" value="GET /npcs/status&#xa;→ get_npcs_status()&#xa;response_model=NPCStatusResponse" style="rounded=1;whiteSpace=wrap;fillColor=#c8e6c0;strokeColor=#82b366;fontSize=11;" vertex="1" parent="L3_bg">
-          <mxGeometry x="600" y="28" width="190" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="L3_route_others" value="GET /npcs  → list_npcs()&#xa;GET /npcs/{name}  → get_npc_info()&#xa;GET /npcs/{name}/memories&#xa;GET /npcs/{name}/affinity&#xa;POST /npcs/status/refresh  GET /health" style="rounded=1;whiteSpace=wrap;fillColor=#c8e6c0;strokeColor=#82b366;fontSize=11;" vertex="1" parent="L3_bg">
-          <mxGeometry x="805" y="20" width="250" height="85" as="geometry" />
-        </mxCell>
-        <mxCell id="L3_lifecycle" value="lifespan()&#xa;startup: npc_mgr init&#xa;         state_mgr.start()&#xa;shutdown: state_mgr.stop()" style="rounded=1;whiteSpace=wrap;fillColor=#a8d5a2;strokeColor=#82b366;fontSize=11;" vertex="1" parent="L3_bg">
-          <mxGeometry x="1070" y="28" width="175" height="70" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Layer 4: 业务逻辑层 (orange) ===== -->
-        <mxCell id="L4_bg" value="④ 业务逻辑层" style="swimlane;startSize=24;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="520" width="1260" height="320" as="geometry" />
-        </mxCell>
-
-        <!-- NPCAgentManager -->
-        <mxCell id="L4_npc_mgr" value="NPCAgentManager (agents.py)&#xa;get_npc_manager() 单例&#xa;chat(npc_name, message): str&#xa;get_npc_info() / get_all_npcs()&#xa;get_npc_memories(name, limit)" style="rounded=1;whiteSpace=wrap;fillColor=#ffb366;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="L4_bg">
-          <mxGeometry x="20" y="30" width="230" height="90" as="geometry" />
-        </mxCell>
-
-        <!-- NPC Agent instances -->
-        <mxCell id="L4_agents_bg" value="NPC Agent 实例（各 NPC 独立）" style="swimlane;startSize=20;fillColor=#ffd9b3;strokeColor=#d6b656;fontSize=11;fontStyle=1;rounded=1;" vertex="1" parent="L4_bg">
-          <mxGeometry x="270" y="25" width="500" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_agent_z" value="SimpleAgent&#xa;name=张三&#xa;system_prompt=create_system_prompt()&#xa;MemoryManager(working+episodic)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="L4_agents_bg">
-          <mxGeometry x="10" y="25" width="150" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_agent_l" value="SimpleAgent&#xa;name=李四&#xa;system_prompt=create_system_prompt()&#xa;MemoryManager(working+episodic)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="L4_agents_bg">
-          <mxGeometry x="175" y="25" width="150" height="70" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_agent_w" value="SimpleAgent&#xa;name=王五&#xa;system_prompt=create_system_prompt()&#xa;MemoryManager(working+episodic)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="L4_agents_bg">
-          <mxGeometry x="340" y="25" width="150" height="70" as="geometry" />
-        </mxCell>
-
-        <!-- RelationshipManager -->
-        <mxCell id="L4_rel_mgr" value="RelationshipManager&#xa;relationship_manager.py&#xa;get_affinity(npc, player)&#xa;update_affinity()&#xa;analyze_sentiment(msg, reply)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="L4_bg">
-          <mxGeometry x="790" y="30" width="210" height="90" as="geometry" />
-        </mxCell>
-
-        <!-- StateManager / BatchGenerator -->
-        <mxCell id="L4_state_mgr" value="StateManager (state_manager.py)&#xa;get_state_manager(update_interval) 单例&#xa;start() / stop() · force_update()&#xa;get_current_state() · get_npc_dialogue()" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="L4_bg">
-          <mxGeometry x="20" y="155" width="290" height="80" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_batch_gen" value="BatchGenerator (batch_generator.py)&#xa;generate_batch_dialogues(context)&#xa;一次 LLM 调用 → 3个NPC对话 JSON&#xa;每 NPC_UPDATE_INTERVAL 秒自动触发" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="L4_bg">
-          <mxGeometry x="330" y="155" width="305" height="80" as="geometry" />
-        </mxCell>
-
-        <!-- Logger -->
-        <mxCell id="L4_logger" value="DialogueLogger (logger.py)&#xa;log_dialogue_start / log_affinity&#xa;log_memory_retrieval / log_npc_response&#xa;logs/dialogue_YYYY-MM-DD.log" style="rounded=1;whiteSpace=wrap;fillColor=#ffe8a0;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="L4_bg">
-          <mxGeometry x="655" y="155" width="260" height="80" as="geometry" />
-        </mxCell>
-
-        <!-- Config -->
-        <mxCell id="L4_config_be" value="config.py (settings)&#xa;API_HOST / API_PORT=8000&#xa;CORS_ORIGINS / NPC_UPDATE_INTERVAL&#xa;LLM_API_KEY / LLM_MODEL&#xa;从 .env 读取" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="L4_bg">
-          <mxGeometry x="935" y="155" width="220" height="80" as="geometry" />
-        </mxCell>
-
-        <!-- Memory layer inside BL -->
-        <mxCell id="L4_memory_bg" value="记忆系统（hello_agents.memory）" style="swimlane;startSize=20;fillColor=#ffd9b3;strokeColor=#d6b656;fontSize=11;fontStyle=1;rounded=1;" vertex="1" parent="L4_bg">
-          <mxGeometry x="20" y="255" width="700" height="56" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_working_mem" value="WorkingMemory&#xa;capacity=10 · ttl_minutes=120&#xa;短期上下文" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="L4_memory_bg">
-          <mxGeometry x="10" y="22" width="200" height="25" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_episodic_mem" value="EpisodicMemory&#xa;db_path=memory_data/{npc}/episodic.db&#xa;长期记忆 · 语义检索 top_k=3" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="L4_memory_bg">
-          <mxGeometry x="230" y="22" width="270" height="25" as="geometry" />
-        </mxCell>
-        <mxCell id="L4_memory_mgr" value="MemoryManager&#xa;working + episodic 双层" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="L4_memory_bg">
-          <mxGeometry x="520" y="22" width="165" height="25" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Layer 5: 外部服务层 (red) ===== -->
-        <mxCell id="L5_bg" value="⑤ 外部服务层" style="swimlane;startSize=24;fillColor=#ffd5cc;strokeColor=#cc4125;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="860" width="1260" height="130" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_llm_label" value="LLM 提供商（HelloAgentsLLM）" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="L5_bg">
-          <mxGeometry x="20" y="28" width="250" height="18" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_openai" value="OpenAI / DeepSeek / 智谱 GLM&#xa;(LLM_API_KEY + LLM_MODEL in .env)" style="rounded=1;whiteSpace=wrap;fillColor=#ffb3a0;strokeColor=#cc4125;fontSize=11;" vertex="1" parent="L5_bg">
-          <mxGeometry x="20" y="50" width="260" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_ollama" value="Ollama（本地）&#xa;http://localhost:11434" style="rounded=1;whiteSpace=wrap;fillColor=#ffb3a0;strokeColor=#cc4125;fontSize=11;" vertex="1" parent="L5_bg">
-          <mxGeometry x="300" y="50" width="190" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_sqlite_label" value="持久化存储" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="L5_bg">
-          <mxGeometry x="515" y="28" width="160" height="18" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_sqlite" value="SQLite（EpisodicMemory）&#xa;memory_data/{npc_name}/episodic.db&#xa;对话历史持久化" style="rounded=1;whiteSpace=wrap;fillColor=#ffccc0;strokeColor=#cc4125;fontSize=11;" vertex="1" parent="L5_bg">
-          <mxGeometry x="515" y="50" width="250" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_file_label" value="文件日志" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="L5_bg">
-          <mxGeometry x="790" y="28" width="160" height="18" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_logfile" value="文件系统日志&#xa;logs/dialogue_YYYY-MM-DD.log&#xa;控制台 + 文件双输出" style="rounded=1;whiteSpace=wrap;fillColor=#ffccc0;strokeColor=#cc4125;fontSize=11;" vertex="1" parent="L5_bg">
-          <mxGeometry x="790" y="50" width="240" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_env_label" value="环境配置" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" vertex="1" parent="L5_bg">
-          <mxGeometry x="1054" y="28" width="160" height="18" as="geometry" />
-        </mxCell>
-        <mxCell id="L5_env" value=".env / .env.example&#xa;LLM_PROVIDER / LLM_MODEL&#xa;LLM_API_KEY / API_PORT=8000" style="rounded=1;whiteSpace=wrap;fillColor=#ffccc0;strokeColor=#cc4125;fontSize=11;" vertex="1" parent="L5_bg">
-          <mxGeometry x="1054" y="50" width="195" height="55" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Layer 6: 数据模型层 (gray) ===== -->
-        <mxCell id="L6_bg" value="⑥ 数据模型层（models.py · Godot 信号 payload）" style="swimlane;startSize=24;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="1010" width="1260" height="160" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_req" value="ChatRequest (Pydantic)&#xa;npc_name: str&#xa;message: str" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="20" y="28" width="190" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_resp" value="ChatResponse (Pydantic)&#xa;npc_name / npc_title&#xa;message / success / timestamp" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="230" y="28" width="220" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_npc_status" value="NPCStatusResponse (Pydantic)&#xa;dialogues: Dict[str, str]&#xa;last_update / next_update_in: int" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="470" y="28" width="240" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_npc_list" value="NPCListResponse / NPCInfo&#xa;name / title / location&#xa;activity / available" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="730" y="28" width="210" height="55" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_godot_signal" value="Godot 信号 payload&#xa;chat_response_received(npc_name, msg)&#xa;npc_status_received(dialogues: Dictionary)" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="960" y="28" width="280" height="55" as="geometry" />
-        </mxCell>
-        <!-- second row -->
-        <mxCell id="L6_npc_roles" value="NPC_ROLES (agents.py)&#xa;张三/李四/王五&#xa;title/location/activity/personality/expertise/style" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="20" y="97" width="350" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_affinity" value="好感度数据&#xa;score(0-100) / level(陌生→挚友)&#xa;interaction_count" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="390" y="97" width="240" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="L6_memory_item" value="MemoryItem&#xa;content/timestamp/importance&#xa;working or episodic" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" vertex="1" parent="L6_bg">
-          <mxGeometry x="650" y="97" width="230" height="45" as="geometry" />
-        </mxCell>
-
-        <!-- ===== Numbered Flow Arrows ===== -->
-
-        <!-- ① User → Godot UI -->
-        <mxCell id="a1" value="① 按 E 键触发对话" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;fontColor=#9673a6;fontSize=11;fontStyle=1;" edge="1" source="L1_wasd" target="L2_player_scene" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ② Player → Dialogue UI -->
-        <mxCell id="a2" value="② call_group(dialogue_system, start_dialogue)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;" edge="1" source="L2_player_scene" target="L2_dialogue_scene" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ③ DialogueUI → api_client.send_chat -->
-        <mxCell id="a3" value="③ APIClient.send_chat(npc_name, message)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;" edge="1" source="L2_dialogue_scene" target="L2_api_client" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ④ api_client → Backend /chat -->
-        <mxCell id="a4" value="④ POST /chat  {npc_name, message}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontColor=#82b366;fontSize=11;fontStyle=1;" edge="1" source="L2_api_client" target="L3_route_chat" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑤ Route → NPCAgentManager.chat() -->
-        <mxCell id="a5" value="⑤ npc_mgr.chat(npc_name, message)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;fontStyle=1;" edge="1" source="L3_route_chat" target="L4_npc_mgr" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑥ NPCAgentManager → SimpleAgent -->
-        <mxCell id="a6" value="⑥ agent.run(message)&#xa;检索 WorkingMemory + EpisodicMemory" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" edge="1" source="L4_npc_mgr" target="L4_agents_bg" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑦ SimpleAgent → LLM -->
-        <mxCell id="a7" value="⑦ HelloAgentsLLM.invoke(messages)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;fontStyle=1;" edge="1" source="L4_agents_bg" target="L5_openai" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑧ reply → RelationshipManager -->
-        <mxCell id="a8" value="⑧ update_affinity(npc, player, msg, reply)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" edge="1" source="L4_npc_mgr" target="L4_rel_mgr" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑨ Logger -->
-        <mxCell id="a9" value="⑨ log_dialogue / log_affinity_change" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" edge="1" source="L4_rel_mgr" target="L4_logger" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑩ Logger → File -->
-        <mxCell id="a10" value="⑩ 写日志文件" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;" edge="1" source="L4_logger" target="L5_logfile" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑪ ChatResponse back to Godot -->
-        <mxCell id="a11" value="⑪ ChatResponse {npc_name, message, success}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#82b366;fontColor=#82b366;fontSize=11;fontStyle=1;dashed=1;" edge="1" source="L3_route_chat" target="L2_api_client" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑫ Signal → DialogueUI -->
-        <mxCell id="a12" value="⑫ chat_response_received.emit(npc_name, msg)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;dashed=1;" edge="1" source="L2_api_client" target="L2_dialogue_scene" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑬ Batch: StateManager → BatchGenerator -->
-        <mxCell id="a13" value="⑬ 后台定时 force_update()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" edge="1" source="L4_state_mgr" target="L4_batch_gen" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑭ BatchGenerator → LLM -->
-        <mxCell id="a14" value="⑭ 批量 LLM 调用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;" edge="1" source="L4_batch_gen" target="L5_openai" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑮ GET /npcs/status → StateManager -->
-        <mxCell id="a15" value="⑮ get_npcs_status() → state_mgr.get_current_state()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" edge="1" source="L3_route_status" target="L4_state_mgr" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑯ Godot polls /npcs/status -->
-        <mxCell id="a16" value="⑯ GET /npcs/status (定时轮询)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontColor=#82b366;fontSize=11;" edge="1" source="L2_main_scene" target="L3_route_status" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- ⑰ npc_status_received → NPC bubbles -->
-        <mxCell id="a17" value="⑰ npc_status_received → npc.update_dialogue()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;dashed=1;" edge="1" source="L2_api_client" target="L2_npc_scene" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- EpisodicMemory → SQLite -->
-        <mxCell id="mem_sqlite" value="持久化" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;" edge="1" source="L4_episodic_mem" target="L5_sqlite" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-        <!-- agents → memory -->
-        <mxCell id="agents_mem" value="读写记忆" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" edge="1" source="L4_agents_bg" target="L4_memory_bg" parent="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram id="cybertown-arch" name="赛博小镇架构流程图">
+        <mxGraphModel dx="1289" dy="788" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1300" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="赛博小镇（Helloagents-AI-Town）架构流程图（代码级）" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;fontColor=#1a1a2e;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="10" width="1260" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="L1_bg" value="① 用户端" style="swimlane;startSize=24;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="55" width="1260" height="75" as="geometry"/>
+                </mxCell>
+                <mxCell id="L1_user" value="👤 玩家" style="shape=mxgraph.general.person;fillColor=#9673a6;strokeColor=#6c4b7d;fontColor=#ffffff;fontSize=12;fontStyle=1;" parent="L1_bg" vertex="1">
+                    <mxGeometry x="30" y="12" width="44" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="L1_wasd" value="WASD 移动角色&#xa;靠近 NPC 后按 E / Enter" style="rounded=1;whiteSpace=wrap;fillColor=#d5b8e8;strokeColor=#9673a6;fontSize=11;" parent="L1_bg" vertex="1">
+                    <mxGeometry x="110" y="18" width="230" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="L1_input" value="在 DialogueUI 输入框输入消息&#xa;点击发送 / 按回车提交" style="rounded=1;whiteSpace=wrap;fillColor=#d5b8e8;strokeColor=#9673a6;fontSize=11;" parent="L1_bg" vertex="1">
+                    <mxGeometry x="370" y="18" width="260" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="L1_env" value="运行环境：Godot 4.x + Python 后端&#xa;http://localhost:8000" style="rounded=1;whiteSpace=wrap;fillColor=#d5b8e8;strokeColor=#9673a6;fontSize=11;" parent="L1_bg" vertex="1">
+                    <mxGeometry x="660" y="18" width="280" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_bg" value="② 前端代码层（Godot 4 · GDScript）" style="swimlane;startSize=24;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="180" width="1260" height="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_main_scene" value="main.tscn + main.gd&#xa;实例化玩家/NPC/UI&#xa;定时 GET /npcs/status" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="20" y="28" width="185" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_player_scene" value="player.tscn + player.gd&#xa;CharacterBody2D&#xa;WASD 移动 · 按 E 触发对话" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="225" y="28" width="195" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_npc_scene" value="npc.tscn + npc.gd&#xa;AnimatedSprite2D + Area2D&#xa;随机巡逻 · 头顶气泡" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="440" y="28" width="195" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_dialogue_scene" value="dialogue_ui.tscn + dialogue_ui.gd&#xa;CanvasLayer · RichTextLabel&#xa;LineEdit + 发送按钮" style="rounded=1;whiteSpace=wrap;fillColor=#b0c8f0;strokeColor=#6c8ebf;fontSize=11;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="655" y="28" width="220" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_config" value="config.gd&#xa;API_BASE = http://localhost:8000&#xa;API_CHAT = /chat&#xa;NPC_STATUS_UPDATE_INTERVAL" style="rounded=1;whiteSpace=wrap;fillColor=#cce0ff;strokeColor=#6c8ebf;fontSize=11;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="990" y="28" width="230" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_api_client" value="api_client.gd（AutoLoad 单例）&#xa;send_chat(npc_name, message) → POST /chat&#xa;get_npc_status() → GET /npcs/status&#xa;信号：chat_response_received / chat_error / npc_status_received" style="rounded=1;whiteSpace=wrap;fillColor=#a0b8e8;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="20" y="150" width="500" height="58" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_http" value="HTTPRequest 节点 × 3&#xa;http_chat / http_status / http_npcs&#xa;异步异步回调：request_completed 信号" style="rounded=1;whiteSpace=wrap;fillColor=#cce0ff;strokeColor=#6c8ebf;fontSize=11;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="655" y="150" width="295" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="L2_signal" value="Godot 信号机制&#xa;松耦合通信（不阻塞游戏帧）&#xa;emit → 各自处理 UI 更新" style="rounded=1;whiteSpace=wrap;fillColor=#cce0ff;strokeColor=#6c8ebf;fontSize=11;" parent="L2_bg" vertex="1">
+                    <mxGeometry x="990" y="140" width="230" height="58" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_bg" value="③ 后端入口层（FastAPI · main.py）" style="swimlane;startSize=24;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="197" y="495" width="1260" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_uvicorn" value="uvicorn&#xa;host=settings.API_HOST&#xa;port=settings.API_PORT (8000)&#xa;lifespan 管理启停" style="rounded=1;whiteSpace=wrap;fillColor=#a8d5a2;strokeColor=#82b366;fontSize=11;fontStyle=1;" parent="L3_bg" vertex="1">
+                    <mxGeometry x="20" y="28" width="175" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_cors" value="CORSMiddleware&#xa;allow_origins=settings.CORS_ORIGINS&#xa;allow_credentials=True&#xa;allow_methods=[&quot;*&quot;]" style="rounded=1;whiteSpace=wrap;fillColor=#a8d5a2;strokeColor=#82b366;fontSize=11;" parent="L3_bg" vertex="1">
+                    <mxGeometry x="210" y="28" width="185" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_route_chat" value="POST /chat&#xa;→ chat_with_npc()&#xa;response_model=ChatResponse" style="rounded=1;whiteSpace=wrap;fillColor=#c8e6c0;strokeColor=#82b366;fontSize=11;fontStyle=1;" parent="L3_bg" vertex="1">
+                    <mxGeometry x="410" y="28" width="175" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_route_status" value="GET /npcs/status&#xa;→ get_npcs_status()&#xa;response_model=NPCStatusResponse" style="rounded=1;whiteSpace=wrap;fillColor=#c8e6c0;strokeColor=#82b366;fontSize=11;" parent="L3_bg" vertex="1">
+                    <mxGeometry x="600" y="28" width="190" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_route_others" value="GET /npcs  → list_npcs()&#xa;GET /npcs/{name}  → get_npc_info()&#xa;GET /npcs/{name}/memories&#xa;GET /npcs/{name}/affinity&#xa;POST /npcs/status/refresh  GET /health" style="rounded=1;whiteSpace=wrap;fillColor=#c8e6c0;strokeColor=#82b366;fontSize=11;" parent="L3_bg" vertex="1">
+                    <mxGeometry x="805" y="20" width="250" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="L3_lifecycle" value="lifespan()&#xa;startup: npc_mgr init&#xa;         state_mgr.start()&#xa;shutdown: state_mgr.stop()" style="rounded=1;whiteSpace=wrap;fillColor=#a8d5a2;strokeColor=#82b366;fontSize=11;" parent="L3_bg" vertex="1">
+                    <mxGeometry x="1070" y="28" width="175" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_bg" value="④ 业务逻辑层" style="swimlane;startSize=24;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="204" y="660" width="1450" height="500" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_npc_mgr" value="NPCAgentManager (agents.py)&#xa;get_npc_manager() 单例&#xa;chat(npc_name, message): str&#xa;get_npc_info() / get_all_npcs()&#xa;get_npc_memories(name, limit)" style="rounded=1;whiteSpace=wrap;fillColor=#ffb366;strokeColor=#d6b656;fontSize=11;fontStyle=1;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="20" y="30" width="230" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_agents_bg" value="NPC Agent 实例（各 NPC 独立）" style="swimlane;startSize=20;fillColor=#ffd9b3;strokeColor=#d6b656;fontSize=11;fontStyle=1;rounded=1;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="521" y="20" width="574" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_agent_z" value="SimpleAgent&#xa;name=张三&#xa;system_prompt=create_system_prompt()&#xa;MemoryManager(working+episodic)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" parent="L4_agents_bg" vertex="1">
+                    <mxGeometry x="27" y="25" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_agent_l" value="SimpleAgent&#xa;name=李四&#xa;system_prompt=create_system_prompt()&#xa;MemoryManager(working+episodic)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" parent="L4_agents_bg" vertex="1">
+                    <mxGeometry x="212" y="25" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_agent_w" value="SimpleAgent&#xa;name=王五&#xa;system_prompt=create_system_prompt()&#xa;MemoryManager(working+episodic)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" parent="L4_agents_bg" vertex="1">
+                    <mxGeometry x="405" y="25" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_rel_mgr" value="RelationshipManager&#xa;relationship_manager.py&#xa;get_affinity(npc, player)&#xa;update_affinity()&#xa;analyze_sentiment(msg, reply)" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=11;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="885" y="220" width="210" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_state_mgr" value="StateManager (state_manager.py)&#xa;get_state_manager(update_interval) 单例&#xa;start() / stop() · force_update()&#xa;get_current_state() · get_npc_dialogue()" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=11;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="20" y="220" width="290" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_batch_gen" value="BatchGenerator (batch_generator.py)&#xa;generate_batch_dialogues(context)&#xa;一次 LLM 调用 → 3个NPC对话 JSON&#xa;每 NPC_UPDATE_INTERVAL 秒自动触发" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=11;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="546" y="220" width="305" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_logger" value="DialogueLogger (logger.py)&#xa;log_dialogue_start / log_affinity&#xa;log_memory_retrieval / log_npc_response&#xa;logs/dialogue_YYYY-MM-DD.log" style="rounded=1;whiteSpace=wrap;fillColor=#ffe8a0;strokeColor=#d6b656;fontSize=11;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="860" y="366" width="260" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_memory_bg" value="记忆系统（hello_agents.memory）" style="swimlane;startSize=20;fillColor=#ffd9b3;strokeColor=#d6b656;fontSize=11;fontStyle=1;rounded=1;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="30" y="390" width="700" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_working_mem" value="WorkingMemory&#xa;capacity=10 · ttl_minutes=120&#xa;短期上下文" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" parent="L4_memory_bg" vertex="1">
+                    <mxGeometry x="10" y="22" width="200" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_episodic_mem" value="EpisodicMemory&#xa;db_path=memory_data/{npc}/episodic.db&#xa;长期记忆 · 语义检索 top_k=3" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" parent="L4_memory_bg" vertex="1">
+                    <mxGeometry x="230" y="22" width="270" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_memory_mgr" value="MemoryManager&#xa;working + episodic 双层" style="rounded=1;whiteSpace=wrap;fillColor=#ffe0b3;strokeColor=#d6b656;fontSize=10;" parent="L4_memory_bg" vertex="1">
+                    <mxGeometry x="520" y="22" width="165" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="L4_config_be" value="config.py (settings)&#xa;API_HOST / API_PORT=8000&#xa;CORS_ORIGINS / NPC_UPDATE_INTERVAL&#xa;LLM_API_KEY / LLM_MODEL&#xa;从 .env 读取" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="L4_bg" vertex="1">
+                    <mxGeometry x="1220" y="220" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="a8" value="⑧ update_affinity(npc, player, msg, reply)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="L4_bg" source="L4_npc_mgr" target="L4_rel_mgr" edge="1">
+                    <mxGeometry x="0.0247" relative="1" as="geometry">
+                        <mxPoint x="846" y="140" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="135" y="190"/>
+                            <mxPoint x="990" y="190"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="L5_bg" value="⑤ 外部服务层" style="swimlane;startSize=24;fillColor=#ffd5cc;strokeColor=#cc4125;fontSize=12;fontStyle=1;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="1220" width="1450" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_llm_label" value="LLM 提供商（HelloAgentsLLM）" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="20" y="28" width="250" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_openai" value="OpenAI / DeepSeek / 智谱 GLM&#xa;(LLM_API_KEY + LLM_MODEL in .env)" style="rounded=1;whiteSpace=wrap;fillColor=#ffb3a0;strokeColor=#cc4125;fontSize=11;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="20" y="50" width="260" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_ollama" value="Ollama（本地）&#xa;http://localhost:11434" style="rounded=1;whiteSpace=wrap;fillColor=#ffb3a0;strokeColor=#cc4125;fontSize=11;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="300" y="50" width="190" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_sqlite_label" value="持久化存储" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="515" y="28" width="160" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_sqlite" value="SQLite（EpisodicMemory）&#xa;memory_data/{npc_name}/episodic.db&#xa;对话历史持久化" style="rounded=1;whiteSpace=wrap;fillColor=#ffccc0;strokeColor=#cc4125;fontSize=11;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="515" y="50" width="250" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_file_label" value="文件日志" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="880" y="28" width="160" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_logfile" value="文件系统日志&#xa;logs/dialogue_YYYY-MM-DD.log&#xa;控制台 + 文件双输出" style="rounded=1;whiteSpace=wrap;fillColor=#ffccc0;strokeColor=#cc4125;fontSize=11;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="884" y="50" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_env_label" value="环境配置" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="1180" y="28" width="160" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="L5_env" value=".env / .env.example&#xa;LLM_PROVIDER / LLM_MODEL&#xa;LLM_API_KEY / API_PORT=8000" style="rounded=1;whiteSpace=wrap;fillColor=#ffccc0;strokeColor=#cc4125;fontSize=11;" parent="L5_bg" vertex="1">
+                    <mxGeometry x="1180" y="50" width="195" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_bg" value="⑥ 数据模型层（models.py · Godot 信号 payload）" style="swimlane;startSize=24;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;fontStyle=1;rounded=1;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="1380" width="1260" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_req" value="ChatRequest (Pydantic)&#xa;npc_name: str&#xa;message: str" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="20" y="28" width="190" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_resp" value="ChatResponse (Pydantic)&#xa;npc_name / npc_title&#xa;message / success / timestamp" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="230" y="28" width="220" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_npc_status" value="NPCStatusResponse (Pydantic)&#xa;dialogues: Dict[str, str]&#xa;last_update / next_update_in: int" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="470" y="28" width="240" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_npc_list" value="NPCListResponse / NPCInfo&#xa;name / title / location&#xa;activity / available" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="730" y="28" width="210" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_godot_signal" value="Godot 信号 payload&#xa;chat_response_received(npc_name, msg)&#xa;npc_status_received(dialogues: Dictionary)" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="960" y="28" width="280" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_npc_roles" value="NPC_ROLES (agents.py)&#xa;张三/李四/王五&#xa;title/location/activity/personality/expertise/style" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="20" y="97" width="350" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_affinity" value="好感度数据&#xa;score(0-100) / level(陌生→挚友)&#xa;interaction_count" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="390" y="97" width="240" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="L6_memory_item" value="MemoryItem&#xa;content/timestamp/importance&#xa;working or episodic" style="rounded=1;whiteSpace=wrap;fillColor=#e8e8e8;strokeColor=#666666;fontSize=11;" parent="L6_bg" vertex="1">
+                    <mxGeometry x="650" y="97" width="230" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="a1" value="① 按 E 键触发对话" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9673a6;fontColor=#9673a6;fontSize=11;fontStyle=1;" parent="1" source="L1_wasd" target="L2_player_scene" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a2" value="② call_group(dialogue_system, start_dialogue)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;exitX=0.716;exitY=-0.013;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="L2_player_scene" target="L2_dialogue_scene" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="565" y="170"/>
+                            <mxPoint x="965" y="170"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a3" value="③ APIClient.send_chat(npc_name, message)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;" parent="1" source="L2_dialogue_scene" target="L2_api_client" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="965" y="140"/>
+                            <mxPoint x="470" y="140"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a4" value="④ POST /chat  {npc_name, message}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontColor=#82b366;fontSize=11;fontStyle=1;" parent="1" source="L2_api_client" target="L3_route_chat" edge="1">
+                    <mxGeometry x="-0.0012" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="470" y="480"/>
+                            <mxPoint x="695" y="480"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a5" value="⑤ npc_mgr.chat(npc_name, message)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;fontStyle=1;" parent="1" source="L3_route_chat" target="L4_npc_mgr" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="695" y="610"/>
+                            <mxPoint x="335" y="610"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a6" value="⑥ agent.run(message)&#xa;检索 WorkingMemory + EpisodicMemory" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" parent="1" source="L4_npc_mgr" target="L4_agents_bg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a7" value="⑦ HelloAgentsLLM.invoke(messages)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;fontStyle=1;" parent="1" target="L5_openai" edge="1">
+                    <mxGeometry x="0.4634" relative="1" as="geometry">
+                        <mxPoint x="725" y="780" as="sourcePoint"/>
+                        <Array as="points">
+                            <mxPoint x="720" y="780"/>
+                            <mxPoint x="720" y="1210"/>
+                            <mxPoint x="347" y="1210"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a9" value="⑨ log_dialogue / log_affinity_change" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" parent="1" source="L4_rel_mgr" target="L4_logger" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a10" value="⑩ 写日志文件" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;" parent="1" source="L4_logger" target="L5_logfile" edge="1">
+                    <mxGeometry x="0.5666" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a11" value="⑪ ChatResponse {npc_name, message, success}" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.322;exitY=0.038;exitDx=0;exitDy=0;strokeColor=#82b366;fontColor=#82b366;fontSize=11;fontStyle=1;dashed=1;exitPerimeter=0;" parent="1" source="L3_route_chat" edge="1">
+                    <mxGeometry x="0.3554" relative="1" as="geometry">
+                        <mxPoint x="410" y="390" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="666" y="526"/>
+                            <mxPoint x="666" y="460"/>
+                            <mxPoint x="410" y="460"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a12" value="⑫ chat_response_received.emit(npc_name, msg)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;dashed=1;" parent="1" source="L2_api_client" target="L2_dialogue_scene" edge="1">
+                    <mxGeometry x="0.0018" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="470" y="320"/>
+                            <mxPoint x="965" y="320"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a13" value="⑬ 后台定时 force_update()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" parent="1" source="L4_state_mgr" target="L4_batch_gen" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="a14" value="⑭ 批量 LLM 调用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="L4_batch_gen" target="L5_openai" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="903" y="980"/>
+                            <mxPoint x="220" y="980"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a15" value="⑮ get_npcs_status() → state_mgr.get_current_state()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" parent="1" source="L3_route_status" target="L4_state_mgr" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="892" y="640"/>
+                            <mxPoint x="369" y="640"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a16" value="⑯ GET /npcs/status (定时轮询)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#82b366;fontColor=#82b366;fontSize=11;" parent="1" source="L2_main_scene" target="L3_route_status" edge="1">
+                    <mxGeometry x="0.6249" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="313" y="440"/>
+                            <mxPoint x="895" y="440"/>
+                        </Array>
+                        <mxPoint x="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="a17" value="⑰ npc_status_received → npc.update_dialogue()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;fontSize=11;dashed=1;" parent="1" source="L2_api_client" target="L2_npc_scene" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mem_sqlite" value="持久化" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc4125;fontColor=#cc4125;fontSize=11;" parent="1" source="L4_episodic_mem" target="L5_sqlite" edge="1">
+                    <mxGeometry x="-0.7685" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="585" y="1180"/>
+                            <mxPoint x="837" y="1180"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="agents_mem" value="读写记忆" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#d6b656;fontColor=#d6b656;fontSize=11;" parent="1" source="L4_agents_bg" target="L4_memory_bg" edge="1">
+                    <mxGeometry x="-0.4709" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1012" y="760"/>
+                            <mxPoint x="584" y="760"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>

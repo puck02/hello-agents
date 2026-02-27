@@ -99,18 +99,30 @@ class NPCStateManager:
             print(f"❌ 更新NPC状态失败: {e}")
     
     def get_current_state(self) -> Dict:
-        """获取当前状态"""
-        # 计算下次更新倒计时
+        """获取当前NPC状态（供前端查询）
+        
+        Returns:
+            包含以下字段的字典：
+            - dialogues: NPC当前对话内容 {NPC名称: 对话文本}
+            - last_update: 上次更新的时间戳（datetime对象）
+            - next_update_in: 距离下次更新还剩多少秒（整数）
+        """
+        # 计算下次更新倒计时（用于前端显示"xx秒后刷新"）
         if self.last_update:
+            # 距离上次更新已经过去了多少秒
             elapsed = (datetime.now() - self.last_update).total_seconds()
+            
+            # 下次更新倒计时 = 更新间隔 - 已过时间
+            # max(0, ...) 确保倒计时不会是负数（防止计算延迟导致负值）
             next_update_in = max(0, int(self.update_interval - elapsed))
         else:
+            # 如果从未更新过，倒计时就是完整的更新间隔
             next_update_in = self.update_interval
         
         return {
-            "dialogues": self.current_dialogues,
-            "last_update": self.last_update,
-            "next_update_in": next_update_in
+            "dialogues": self.current_dialogues,      # NPC当前的背景对话
+            "last_update": self.last_update,          # 最后更新时间（用于日志/调试）
+            "next_update_in": next_update_in          # 倒计时秒数（前端可显示进度条）
         }
     
     def get_npc_dialogue(self, npc_name: str) -> Optional[str]:
